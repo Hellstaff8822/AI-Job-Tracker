@@ -53,7 +53,7 @@ export default function JobTrackerPage() {
             <JobInputForm />
           </section>
 
-          <section className='w-full lg:flex-1 h-full bg-[#121212]/80 backdrop-blur-xl p-0 lg:p-6 rounded-t-[2.5rem] lg:rounded-[2.5rem] shadow-2xl border-t lg:border border-white/5 ring-1 ring-white/5 overflow-hidden flex flex-col'>
+          <section className='w-full lg:flex-1 h-[600px] lg:h-full bg-[#121212]/80 backdrop-blur-xl p-4 lg:p-6 rounded-[2.5rem] shadow-2xl border border-white/5 ring-1 ring-white/5 overflow-hidden flex flex-col'>
             <KanbanBoard />
           </section>
         </div>
