@@ -18,7 +18,9 @@ import {
   KeyboardSensor,
 } from '@dnd-kit/core';
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
-import { getJobsAction } from '@/actions/job';
+import { getJobsAction, updateJobStatusAction } from '@/actions/job';
+import { toast } from 'sonner';
+
 
 export const COLUMNS: JobStatus[] = [
   'Backlog',
@@ -60,11 +62,22 @@ export function KanbanBoard() {
     setActiveId(event.active.id as string);
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+  const handleDragEnd = async (event: DragEndEvent) => {
     setActiveId(null);
+    const { active, over } = event;
     if (!over) return;
-    updateJobStatus(active.id as string, over.id as JobStatus);
+    const jobId = active.id as string;
+    const newStatus = over.id as JobStatus;
+    const job = jobs.find((j) => j.id === jobId);
+    if (!job || job.status === newStatus) return;
+    const oldStatus = job.status; 
+    updateJobStatus(jobId, newStatus);
+    try {
+      await updateJobStatusAction(jobId, newStatus);
+    } catch (error) {
+      updateJobStatus(jobId, oldStatus);
+      toast.error('Не вдалося зберегти статус у базі даних');
+    }
   };
 
   const activeJob = jobs.find((j) => j.id === activeId);

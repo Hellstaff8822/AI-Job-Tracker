@@ -9,6 +9,7 @@ import {
   addNoteAction,
   deleteNoteAction,
   generateAIInsightsAction,
+  updateJobStatusAction,
 } from '@/actions/job';
 import { useJobStore } from '@/store/useJobStore';
 import { toast } from 'sonner';
@@ -56,7 +57,7 @@ export function JobModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const { removeJob, addNote, deleteNote, updateAIInsights } = useJobStore();
+  const { removeJob, addNote, deleteNote, updateAIInsights, updateJobStatus } = useJobStore();
 
   useEffect(() => {
     setIsMounted(true);
@@ -120,13 +121,18 @@ export function JobModal({
     }
   };
 
-  const handleStatusChange = (newStatus: JobStatus) => {
-    if (onStatusChange && newStatus !== job.status) {
-      onStatusChange(job.id, newStatus);
-      toast.info(`Статус: ${newStatus}`);
-      onClose();
-    }
-  };
+ const handleStatusChange = async (status: JobStatus) => {
+   const oldStatus = job.status;
+   if (status === oldStatus) return;
+   updateJobStatus(job.id, status);
+   try {
+     await updateJobStatusAction(job.id, status);
+     toast.success(`Статус успішно змінено на ${status}`);
+   } catch (error) {
+     updateJobStatus(job.id, oldStatus);
+     toast.error('Не вдалося оновити статус у базі даних');
+   }
+ };
 
   return createPortal(
     <div className='fixed inset-0 z-[2000] flex items-center justify-center p-4'>

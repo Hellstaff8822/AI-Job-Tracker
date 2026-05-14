@@ -46,18 +46,27 @@ export async function parseAndSaveJob(url: string) {
       .trim();
     const finalContent = cleanText.substring(0, 12000);
     const responseAI = await openai.chat.completions.create({
-      model: 'google/gemini-2.5-flash',
+      model: 'google/gemini-2.0-flash-001',
       messages: [
         {
           role: 'system',
-          content: `Ти — експерт з аналізу вакансій. Твоє завдання — знайти назву компанії, посаду та деталі. 
-          Якщо в тексті є назва компанії (часто на початку або в заголовку), обов'язково витягни її.
-          Поверни JSON: { company, position, technologies (array), salary, workFormat, contactInfo, description, logoUrl }.
-          Якщо logoUrl не знайдено в тексті, використовуй це значення: ${metaLogo || 'null'}`,
+          content: `
+        Ти — професійний IT-рекрутер. Твоє завдання: проаналізувати текст сторінки та витягнути дані вакансії.
+        
+        КРИТЕРІЙ ВАКАНСІЇ: Текст має містити назву позиції та опис обов'язків або вимог.
+        
+        ЯКЩО ТЕКСТ Є ВАКАНСІЄЮ:
+        Поверни JSON з полями: isJob: true, company, position, salary, technologies (масив), workFormat, contactInfo, description, logoUrl.
+        
+        ЯКЩО ТЕКСТ НЕ Є ВАКАНСІЄЮ (наприклад, це головна сторінка сайту, стаття, документація NPM, профіль у соцмережі):
+        Поверни JSON: { "isJob": false }.
+        
+        Важливо: Повертай ТІЛЬКИ чистий JSON.
+      `,
         },
         {
           role: 'user',
-          content: `Проаналізуй вакансію: ${finalContent}`,
+          content: `Текст сторінки: ${pageTitle}\n\n${cleanText}`,
         },
       ],
       response_format: { type: 'json_object' },
@@ -66,6 +75,12 @@ export async function parseAndSaveJob(url: string) {
     const content = responseAI.choices[0]?.message?.content;
     if (!content) throw new Error('Порожня відповідь');
     const parsedData = JSON.parse(content);
+
+    if (parsedData.isJob === false) {
+      throw new Error(
+        'Вибачте, схоже, це посилання не містить опису вакансії'
+      );
+    }
     const newJob = await prisma.job.create({
       data: {
         userId,
@@ -157,7 +172,7 @@ export async function generateAIInsightsAction(jobId: string) {
   if (!userId) throw new Error('Unauthorized');
   try {
     const job = await prisma.job.findUnique({
-       where: { id: jobId, userId },
+      where: { id: jobId, userId },
     });
     if (!job || !job.description) throw new Error('Опис вакансії порожній');
     const completion = await openai.chat.completions.create({
@@ -183,5 +198,29 @@ export async function generateAIInsightsAction(jobId: string) {
   } catch (error: any) {
     console.error('❌ AI Error:', error.message);
     throw new Error('Не вдалося згенерувати поради');
+  }
+}
+
+export async function updateJobStatusAction(jobId: string, status: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error('Unauthorized');
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedJob = await tx.job.update({
+        where: { id: jobId, userId },
+        data: { status },
+      });
+      await tx.statusHistory.create({
+        data: {
+          jobId,
+          status,
+        },
+      });
+      return updatedJob;
+    });
+    return { success: true, job: result };
+  } catch (error: any) {
+    console.error('❌ Update Status Error:', error.message);
+    throw new Error('Не вдалося оновити статус у базі даних');
   }
 }
