@@ -5,6 +5,7 @@ import OpenAI from 'openai';
 import * as cheerio from 'cheerio';
 
 import { auth } from '@clerk/nextjs/server';
+import { unstable_noStore as noStore } from 'next/cache';
 
 const openai = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
@@ -86,7 +87,7 @@ export async function parseAndSaveJob(url: string) {
 
 export async function getJobsAction() {
   const { userId } = await auth();
-
+  noStore();
   if (!userId) throw new Error('Ви не авторизовані!');
 
   try {
