@@ -8,7 +8,7 @@ export default function JobTrackerPage() {
   const { isLoaded, isSignedIn } = useAuth();
 
   return (
-    <main className='min-h-screen bg-[#0a0a0a] text-slate-200 font-sans selection:bg-blue-500/30 overflow-y-auto'>
+    <main className='bg-[#0a0a0a] text-slate-200 font-sans selection:bg-blue-500/30 overflow-y-auto'>
       <div className='fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none' />
       <div className='fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none' />
 
