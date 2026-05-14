@@ -52,6 +52,10 @@ body {
   scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
+.custom-scrollbar::-webkit-scrollbar-button {
+  display: none !important;
+}
+
 @keyframes shimmer {
   100% {
     transform: translateX(100%);
