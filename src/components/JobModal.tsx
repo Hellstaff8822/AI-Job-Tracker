@@ -26,6 +26,7 @@ import {
   Sparkles,
   Wand2,
   BrainCircuit,
+  History,
 } from 'lucide-react';
 
 import ReactMarkdown from 'react-markdown';
@@ -133,10 +134,11 @@ export function JobModal({
         className='absolute inset-0 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300'
         onClick={onClose}
       />
-      <div className='relative bg-slate-900 border border-white/5 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]'>
-        <div className='relative h-24 bg-gradient-to-r from-blue-600/10 to-indigo-600/10 p-6 border-b border-white/5 shrink-0'>
-          <div className='flex items-center gap-4'>
-            <div className='w-14 h-14 rounded-xl bg-slate-800 border border-white/10 overflow-hidden shadow-xl flex items-center justify-center shrink-0'>
+      <div className='relative bg-slate-900 border border-white/5 w-[95vw] max-w-2xl rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]'>
+        {' '}
+        <div className='relative h-auto min-h-24 bg-gradient-to-r from-blue-600/10 to-indigo-600/10 p-5 md:p-6 border-b border-white/5 shrink-0'>
+          <div className='flex items-center gap-4 pr-10'>
+            <div className='w-12 h-12 md:w-14 md:h-14 rounded-xl bg-slate-800 border border-white/10 overflow-hidden shadow-xl flex items-center justify-center shrink-0'>
               {job.logoUrl ? (
                 <img
                   src={job.logoUrl}
@@ -144,11 +146,11 @@ export function JobModal({
                   className='w-full h-full object-cover'
                 />
               ) : (
-                <Building2 className='w-7 h-7 text-slate-600' />
+                <Building2 className='w-6 h-6 md:w-7 md:h-7 text-slate-600' />
               )}
             </div>
-            <div className='min-w-0'>
-              <h2 className='text-xl font-bold text-white truncate tracking-tight'>
+            <div className='min-w-0 flex-1'>
+              <h2 className='text-lg md:text-xl font-bold text-white truncate tracking-tight'>
                 {job.position}
               </h2>
               <a
@@ -157,7 +159,7 @@ export function JobModal({
                 rel='noopener noreferrer'
                 className='group inline-flex items-center gap-1.5 mt-0.5 cursor-pointer'
               >
-                <p className='text-blue-400 group-hover:text-blue-300 font-medium text-sm transition-colors'>
+                <p className='text-blue-400 group-hover:text-blue-300 font-medium text-xs md:text-sm transition-colors'>
                   {job.company}
                 </p>
                 <ExternalLink className='w-3 h-3 text-blue-500/50 group-hover:text-white transition-all group-hover:scale-110' />
@@ -166,12 +168,12 @@ export function JobModal({
           </div>
           <button
             onClick={onClose}
-            className='absolute top-6 right-6 p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-full transition-all cursor-pointer'
+            className='absolute top-5 right-5 md:top-6 md:right-6 p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-full transition-all cursor-pointer'
           >
             <X className='w-5 h-5' />
           </button>
         </div>
-        <div className='flex px-8 bg-slate-900/50 border-b border-white/5'>
+        <div className='flex bg-slate-900/50 border-b border-white/5 shrink-0 h-14'>
           {[
             { id: 'details', label: 'Вакансія', icon: FileText, color: 'blue' },
             {
@@ -185,25 +187,42 @@ export function JobModal({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-6 py-4 text-[10px] font-bold uppercase tracking-widest transition-all border-b-2 cursor-pointer flex items-center gap-2 ${
+              className={`relative flex-1 flex flex-col items-center justify-center transition-all cursor-pointer group ${
                 activeTab === tab.id
-                  ? `border-${tab.color}-500 text-${tab.color}-500`
-                  : 'border-transparent text-slate-500 hover:text-slate-300'
+                  ? tab.id === 'ai'
+                    ? 'text-purple-400'
+                    : 'text-blue-400'
+                  : 'text-slate-500 hover:text-slate-300'
               }`}
             >
-              <tab.icon className='w-3.5 h-3.5' /> {tab.label}
-              {tab.id === 'notes' && job.notes.length > 0 && (
-                <span className='bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded-md text-[10px]'>
-                  {job.notes.length}
-                </span>
+              <div className='relative'>
+                <tab.icon className='w-5 h-5' />
+                {tab.id === 'notes' && job.notes.length > 0 && (
+                  <span className='absolute -top-1.5 -right-2.5 bg-blue-600 text-white text-[8px] font-black px-1 rounded-full min-w-[14px] h-[14px] flex items-center justify-center border-2 border-slate-900 shadow-lg'>
+                    {job.notes.length}
+                  </span>
+                )}
+              </div>
+              <span className='hidden sm:inline text-[9px] font-black uppercase tracking-widest mt-1'>
+                {tab.label}
+              </span>
+
+              {activeTab === tab.id && (
+                <div
+                  className={`absolute bottom-0 left-0 right-0 h-0.5 animate-in fade-in slide-in-from-bottom-1 duration-300 ${
+                    tab.id === 'ai'
+                      ? 'bg-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.4)]'
+                      : 'bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.4)]'
+                  }`}
+                />
               )}
             </button>
           ))}
         </div>
-        <div className='p-8 overflow-y-auto custom-scrollbar flex-1'>
+        <div className='p-4 md:p-8 overflow-y-auto custom-scrollbar flex-1'>
           {activeTab === 'details' && (
             <div className='space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300'>
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                 <div className='bg-white/[0.03] p-4 rounded-2xl border border-white/5'>
                   <p className='text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1'>
                     Бюджет
@@ -322,9 +341,9 @@ export function JobModal({
           {activeTab === 'ai' && (
             <div className='space-y-6 animate-in fade-in zoom-in-95 duration-300 h-full'>
               {!job.aiInsights && !isGeneratingAI ? (
-                <div className='text-center py-16 bg-purple-500/5 rounded-3xl border border-purple-500/10'>
-                  <div className='w-16 h-16 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4'>
-                    <BrainCircuit className='w-8 h-8 text-purple-500' />
+                <div className='text-center py-8 md:py-16 bg-purple-500/5 rounded-3xl border border-purple-500/10'>
+                  <div className='w-12 h-12 md:w-16 md:h-16 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4'>
+                    <BrainCircuit className='w-6 h-6 md:w-8 md:h-8 text-purple-500' />
                   </div>
                   <h3 className='text-white font-bold mb-2'>AI Підготовка</h3>
                   <p className='text-slate-500 text-xs mb-8 max-w-xs mx-auto px-4'>
@@ -333,7 +352,7 @@ export function JobModal({
                   </p>
                   <button
                     onClick={handleGenerateAI}
-                    className='px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white text-xs font-black rounded-2xl transition-all shadow-xl shadow-purple-600/20 flex items-center gap-2 mx-auto cursor-pointer'
+                    className='px-6 py-3 md:px-8 md:py-4 bg-purple-600 hover:bg-purple-500 text-white text-[10px] md:text-xs font-black rounded-2xl transition-all shadow-xl shadow-purple-600/20 flex items-center gap-2 mx-auto cursor-pointer'
                   >
                     <Wand2 className='w-4 h-4' /> ЗГЕНЕРУВАТИ
                   </button>
@@ -372,18 +391,18 @@ export function JobModal({
             </div>
           )}
         </div>
-        <div className='p-6 bg-slate-950/50 border-t border-white/5 shrink-0'>
-          <div className='flex flex-col gap-6'>
+        <div className='p-3 md:p-6 bg-slate-950/50 border-t border-white/5 shrink-0'>
+          <div className='flex flex-col gap-3 md:gap-6'>
             <div>
-              <p className='text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-3'>
+              <p className='text-slate-500 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mb-2'>
                 Змінити статус
               </p>
-              <div className='flex flex-wrap gap-2'>
+              <div className='flex flex-wrap gap-1.5 md:gap-2'>
                 {COLUMNS.map((status) => (
                   <button
                     key={status}
                     onClick={() => handleStatusChange(status)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-2 py-1 md:px-3 md:py-1.5 rounded-lg text-[9px] md:text-xs font-bold transition-all cursor-pointer ${
                       job.status === status
                         ? 'bg-blue-600 text-white shadow-lg'
                         : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
@@ -399,26 +418,26 @@ export function JobModal({
               {!showConfirm ? (
                 <button
                   onClick={() => setShowConfirm(true)}
-                  className='flex items-center gap-2 text-slate-500 hover:text-red-500 transition-colors text-sm font-bold group cursor-pointer'
+                  className='flex items-center gap-2 text-slate-500 hover:text-red-500 transition-colors text-xs md:text-sm font-bold group cursor-pointer'
                 >
                   <Trash2 className='w-4 h-4' /> Видалити вакансію
                 </button>
               ) : (
-                <div className='flex items-center gap-4 bg-red-500/10 p-3 px-4 rounded-2xl border border-red-500/20 flex-1'>
-                  <p className='text-red-200 text-xs font-bold flex-1'>
+                <div className='flex items-center gap-4 bg-red-500/10 p-2 md:p-3 px-3 md:px-4 rounded-2xl border border-red-500/20 flex-1'>
+                  <p className='text-red-200 text-[10px] md:text-xs font-bold flex-1'>
                     Видалити назавжди?
                   </p>
                   <div className='flex gap-2'>
                     <button
                       onClick={() => setShowConfirm(false)}
-                      className='text-slate-400 text-xs font-bold px-2 cursor-pointer'
+                      className='text-slate-400 text-[10px] md:text-xs font-bold px-2 cursor-pointer'
                     >
                       НІ
                     </button>
                     <button
                       onClick={handleDeleteJob}
                       disabled={isDeleting}
-                      className='px-4 py-1.5 bg-red-600 text-white text-xs font-black rounded-xl cursor-pointer'
+                      className='px-3 py-1 md:px-4 md:py-1.5 bg-red-600 text-white text-[10px] md:text-xs font-black rounded-xl cursor-pointer'
                     >
                       {isDeleting ? '...' : 'ТАК'}
                     </button>

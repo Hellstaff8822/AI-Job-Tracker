@@ -77,7 +77,7 @@ export function KanbanBoard() {
         onDragEnd={handleDragEnd}
         modifiers={[snapCenterToCursor]}
       >
-        <div className='flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-smooth flex gap-4 p-4 lg:p-0 custom-scrollbar'>
+        <div className='flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-smooth flex gap-4 p-4 pb-10 lg:p-0 custom-scrollbar'>
           {COLUMNS.map((status) => (
             <div
               key={status}
