@@ -1,0 +1,35 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+  output          = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Job {
+  id           String   @id @default(uuid())
+  company      String
+  position     String
+  status       String   @default("Backlog")
+  technologies String[]
+  logoUrl      String?
+  salary       String?
+  workFormat   String?
+  contactInfo  String?
+  description  String?
+  url          String?
+  notes        Note[]
+  aiInsights   String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  text      String   @db.Text
+  createdAt DateTime @default(now())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
