@@ -10,6 +10,7 @@ datasource db {
 
 model Job {
   id           String   @id @default(uuid())
+  userId       String 
   company      String
   position     String
   status       String   @default("Backlog")
@@ -24,6 +25,7 @@ model Job {
   aiInsights   String?  @db.Text
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  history    StatusHistory[]
 }
 
 
@@ -33,4 +35,14 @@ model Note {
   createdAt DateTime @default(now())
   jobId     String   
   job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+
+
+model StatusHistory {
+  id          String   @id @default(cuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status      String   
+  createdAt   DateTime @default(now())
 }
