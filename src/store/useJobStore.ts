@@ -22,10 +22,27 @@ export const useJobStore = create<JobState>((set) => ({
 
   setJobs: (jobs) => set({ jobs }),
 
-  updateJobStatus: (id, status) =>
-    set((state) => ({
-      jobs: state.jobs.map((job) => (job.id === id ? { ...job, status } : job)),
-    })),
+ updateJobStatus: (id, status) =>
+  set((state) => ({
+    jobs: state.jobs.map((job) =>
+      job.id === id
+        ? {
+            ...job,
+            status,
+
+            history: [
+              {
+                id: Math.random().toString(),
+                jobId: id,
+                status,
+                createdAt: new Date().toISOString(),
+              },
+              ...(job.history || []),
+            ],
+          }
+        : job
+    ),
+  })),
 
   removeJob: (id) =>
     set((state) => ({

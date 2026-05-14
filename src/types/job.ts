@@ -25,4 +25,12 @@ export interface Job {
   url?: string;
   notes: Note[];
   aiInsights?: string;
+  history?: StatusHistory[];
+}
+
+export interface StatusHistory {
+  id: string;
+  jobId: string;
+  status: string;
+  createdAt: Date | string;
 }

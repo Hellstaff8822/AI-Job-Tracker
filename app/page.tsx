@@ -3,6 +3,7 @@
 import { JobInputForm } from '@/components/JobInputForm';
 import { KanbanBoard } from '@/components/KanbanBoard';
 import { SignInButton, UserButton, useAuth } from '@clerk/nextjs';
+import { DashboardStats } from '@/components/DashboardStats';
 
 export default function JobTrackerPage() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -48,6 +49,8 @@ export default function JobTrackerPage() {
             )}
           </div>
         </header>
+
+        <DashboardStats />
 
         <div className='flex flex-col lg:flex-row gap-8 flex-1 lg:overflow-hidden'>
           <section className='w-full lg:w-[320px] shrink-0 mb-8 lg:mb-0'>

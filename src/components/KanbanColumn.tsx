@@ -3,33 +3,47 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 
+const COLUMN_THEMES: Record<string, string> = {
+  BACKLOG: 'text-blue-400',
+  CONTACTED: 'text-yellow-400',
+  SCREENING: 'text-purple-400',
+  'TECH INTERVIEW': 'text-indigo-400',
+  OFFER: 'text-green-400',
+  REJECTED: 'text-red-400',
+};
+
 interface KanbanColumnProps {
   title: string;
-  count?: number;
   children?: React.ReactNode;
 }
 
 export function KanbanColumn({
   title,
-  count = 0,
   children,
 }: KanbanColumnProps) {
   const { setNodeRef } = useDroppable({ id: title });
-
+  const count = React.Children.count(children);
+  const colorClass = COLUMN_THEMES[title.toUpperCase()] || 'text-slate-400';
   return (
-    <div className='flex flex-col h-full bg-[#1a1a1a]/40 backdrop-blur-md rounded-[2rem] border border-white/5 p-5'>
-      {' '}
-      <div className='flex items-center justify-between mb-6 px-2'>
-        <h2 className='text-sm font-bold text-slate-400 uppercase tracking-widest'>
-          {title}
-        </h2>
-        <span className='px-3 py-1 bg-white/5 rounded-full text-xs font-mono text-slate-500 border border-white/5'>
+    <div className='flex-1 min-w-[340px] flex flex-col h-full bg-[#161616]/40 backdrop-blur-2xl rounded-[2.5rem] border border-white/5 p-6 transition-all duration-500 hover:border-white/10 group/column'>
+      <div className='flex items-center justify-between mb-8 px-1'>
+        <div className='flex items-center gap-3'>
+          <div
+            className={`w-1.5 h-1.5 rounded-full ${colorClass.replace('text', 'bg')} shadow-[0_0_12px_rgba(59,130,246,0.3)] animate-pulse`}
+          />
+          <h2
+            className={`text-[11px] font-black uppercase tracking-[0.3em] ${colorClass}`}
+          >
+            {title}
+          </h2>
+        </div>
+        <span className='px-3 py-1 bg-white/5 rounded-xl text-[11px] font-black text-slate-500 border border-white/5 tabular-nums'>
           {count}
         </span>
       </div>
       <div
         ref={setNodeRef}
-        className='flex-1 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar'
+        className='flex-1 flex flex-col gap-5 min-h-[400px] overflow-y-auto custom-scrollbar pb-4'
       >
         {children}
       </div>

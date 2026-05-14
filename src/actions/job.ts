@@ -77,9 +77,7 @@ export async function parseAndSaveJob(url: string) {
     const parsedData = JSON.parse(content);
 
     if (parsedData.isJob === false) {
-      throw new Error(
-        'Вибачте, схоже, це посилання не містить опису вакансії'
-      );
+      throw new Error('Вибачте, схоже, це посилання не містить опису вакансії');
     }
     const newJob = await prisma.job.create({
       data: {
@@ -118,7 +116,7 @@ export async function getJobsAction() {
   try {
     const jobs = await prisma.job.findMany({
       where: { userId },
-      include: { notes: true },
+      include: { notes: true, history: true },
       orderBy: { createdAt: 'desc' },
     });
     return jobs;
@@ -201,6 +199,8 @@ export async function generateAIInsightsAction(jobId: string) {
   }
 }
 
+
+
 export async function updateJobStatusAction(jobId: string, status: string) {
   const { userId } = await auth();
   if (!userId) throw new Error('Unauthorized');
@@ -224,3 +224,4 @@ export async function updateJobStatusAction(jobId: string, status: string) {
     throw new Error('Не вдалося оновити статус у базі даних');
   }
 }
+

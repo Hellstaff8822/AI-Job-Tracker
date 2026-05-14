@@ -28,9 +28,24 @@ import {
   Wand2,
   BrainCircuit,
   History,
+  Send,
+  Users,
+  Award,
+  XCircle,
 } from 'lucide-react';
 
 import ReactMarkdown from 'react-markdown';
+
+const STATUS_CONFIG: Record<
+  string,
+  { icon: any; color: string; label: string }
+> = {
+  Backlog: { icon: FileText, color: 'text-slate-400', label: 'Створено' },
+  Applied: { icon: Send, color: 'text-blue-400', label: 'Відправлено' },
+  Interview: { icon: Users, color: 'text-yellow-400', label: 'Інтерв’ю' },
+  Offer: { icon: Award, color: 'text-green-400', label: 'Офер ✨' },
+  Rejected: { icon: XCircle, color: 'text-red-400', label: 'Відмова' },
+};
 
 interface JobModalProps {
   job: Job;
@@ -48,9 +63,9 @@ export function JobModal({
     initialJob;
 
   const [isMounted, setIsMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<'details' | 'notes' | 'ai'>(
-    'details'
-  );
+ const [activeTab, setActiveTab] = useState<
+   'details' | 'notes' | 'ai' | 'events'
+ >('details');
   const [newNoteText, setNewNoteText] = useState('');
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
@@ -189,6 +204,7 @@ export function JobModal({
               color: 'blue',
             },
             { id: 'ai', label: 'AI Помічник', icon: Sparkles, color: 'purple' },
+            { id: 'events', label: 'Events', icon: History },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -392,6 +408,65 @@ export function JobModal({
                   >
                     Оновити аналіз
                   </button>
+                </div>
+              )}
+            </div>
+          )}
+          {activeTab === 'events' && (
+            <div className='p-6 space-y-8 relative max-w-lg mx-auto'>
+              {/* Вертикальна лінія */}
+              <div className='absolute left-[2.25rem] top-10 bottom-10 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent' />
+
+              {[...(job.history || [])]
+                .sort(
+                  (a, b) =>
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime()
+                )
+                .map((event) => {
+                  const config =
+                    STATUS_CONFIG[event.status] || STATUS_CONFIG['Backlog'];
+                  return (
+                    <div
+                      key={event.id}
+                      className='relative flex gap-6 items-start group animate-in fade-in slide-in-from-left-4 duration-500'
+                    >
+                      {/* Точка на таймлайні */}
+                      <div
+                        className={`relative z-10 flex items-center justify-center w-9 h-9 rounded-xl bg-slate-900 border border-white/5 ${config.color} shadow-2xl group-hover:scale-110 transition-transform`}
+                      >
+                        <config.icon className='w-4 h-4' />
+                      </div>
+
+                      <div className='flex-1 pt-1'>
+                        <div className='flex items-center justify-between gap-4 mb-1'>
+                          <h4 className='text-[10px] font-black text-white uppercase tracking-widest'>
+                            {config.label}
+                          </h4>
+                          <time className='text-[9px] text-slate-500 font-bold uppercase'>
+                            {new Date(event.createdAt).toLocaleString('uk-UA', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </time>
+                        </div>
+                        <p className='text-xs text-slate-400 leading-relaxed'>
+                          Статус вакансії змінено на{' '}
+                          <span className={`font-bold ${config.color}`}>
+                            {event.status}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              {(job.history || []).length === 0 && (
+                <div className='text-center py-12'>
+                  <p className='text-slate-500 text-xs italic'>
+                    Історія статусів ще порожня...
+                  </p>
                 </div>
               )}
             </div>

@@ -99,7 +99,6 @@ export function KanbanBoard() {
               <KanbanColumn
                 key={status}
                 title={status}
-                count={jobs.filter((j) => j.status === status).length}
               >
                 {jobs
                   .filter((j) => j.status === status)
