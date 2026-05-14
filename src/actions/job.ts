@@ -15,6 +15,13 @@ const openai = new OpenAI({
 export async function parseAndSaveJob(url: string) {
   const { userId } = await auth();
   if (!userId) throw new Error('Unauthorized');
+
+  const existingJob = await prisma.job.findFirst({
+    where: { userId, url },
+  });
+  if (existingJob) {
+    throw new Error('Ви вже додали цю вакансію! 🧐');
+  }
   try {
     const response = await fetch(url, {
       headers: {
@@ -77,6 +84,9 @@ export async function parseAndSaveJob(url: string) {
         logoUrl: parsedData.logoUrl || metaLogo,
         url: url,
         status: 'Backlog',
+      },
+      include: {
+        notes: true,
       },
     });
     return newJob;

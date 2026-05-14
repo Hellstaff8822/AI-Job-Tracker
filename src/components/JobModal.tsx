@@ -197,9 +197,9 @@ export function JobModal({
             >
               <div className='relative'>
                 <tab.icon className='w-5 h-5' />
-                {tab.id === 'notes' && job.notes.length > 0 && (
+                {tab.id === 'notes' && (job.notes?.length || 0) > 0 && (
                   <span className='absolute -top-1.5 -right-2.5 bg-blue-600 text-white text-[8px] font-black px-1 rounded-full min-w-[14px] h-[14px] flex items-center justify-center border-2 border-slate-900 shadow-lg'>
-                    {job.notes.length}
+                    {job.notes?.length}
                   </span>
                 )}
               </div>
@@ -247,7 +247,7 @@ export function JobModal({
                   <Briefcase className='w-3 h-3' /> Стек технологій
                 </h3>
                 <div className='flex flex-wrap gap-2'>
-                  {job.technologies.map((tech) => (
+                  {(job.technologies || []).map((tech) => (
                     <span
                       key={tech}
                       className='px-3 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium border border-white/5'
@@ -295,7 +295,7 @@ export function JobModal({
               </div>
 
               <div className='space-y-4'>
-                {job.notes.length === 0 ? (
+                {!job.notes || job.notes.length === 0 ? (
                   <div className='text-center py-12'>
                     <MessageCircle className='w-12 h-12 text-slate-800 mx-auto mb-4' />
                     <p className='text-slate-500 text-sm italic'>
@@ -303,7 +303,7 @@ export function JobModal({
                     </p>
                   </div>
                 ) : (
-                  [...job.notes]
+                  [...(job.notes || [])]
                     .sort(
                       (a, b) =>
                         new Date(b.createdAt).getTime() -
