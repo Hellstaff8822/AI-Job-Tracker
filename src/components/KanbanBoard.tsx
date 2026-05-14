@@ -17,7 +17,7 @@ import {
   TouchSensor,
   KeyboardSensor,
 } from '@dnd-kit/core';
-import { snapCenterToCursor} from '@dnd-kit/modifiers';
+import { snapCenterToCursor } from '@dnd-kit/modifiers';
 import { getJobsAction } from '@/actions/job';
 
 export const COLUMNS: JobStatus[] = [

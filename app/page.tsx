@@ -8,12 +8,11 @@ export default function JobTrackerPage() {
   const { isLoaded, isSignedIn } = useAuth();
 
   return (
-    <main className='bg-[#0a0a0a] text-slate-200 font-sans selection:bg-blue-500/30 overflow-y-auto'>
+    <main className='bg-[#0a0a0a] text-slate-200 font-sans selection:bg-blue-500/30 min-h-screen'>
       <div className='fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none' />
       <div className='fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none' />
 
-      <div className='relative z-10 max-w-[1920px] mx-auto flex flex-col p-4 md:p-8 pb-32 lg:pb-0 lg:h-screen lg:overflow-hidden'>
-        {' '}
+      <div className='relative z-10 max-w-[1920px] mx-auto p-4 md:p-8 lg:h-screen lg:flex lg:flex-col lg:overflow-hidden'>
         <header className='flex justify-between items-end mb-12'>
           <div>
             <h1 className='text-4xl font-black tracking-tighter bg-gradient-to-r from-white to-slate-500 bg-clip-text text-transparent leading-none'>
@@ -49,15 +48,18 @@ export default function JobTrackerPage() {
             )}
           </div>
         </header>
+
         <div className='flex flex-col lg:flex-row gap-8 flex-1 lg:overflow-hidden'>
-          <section className='w-full lg:w-[320px] shrink-0'>
+          <section className='w-full lg:w-[320px] shrink-0 mb-8 lg:mb-0'>
             <JobInputForm />
           </section>
 
-          <section className='w-full lg:flex-1 min-h-[500px] lg:h-full bg-[#121212]/80 backdrop-blur-xl p-4 lg:p-6 rounded-[2.5rem] shadow-2xl border border-white/5 ring-1 ring-white/5 overflow-hidden flex flex-col'>
+          <section className='w-full lg:flex-1 h-auto lg:h-full bg-[#121212]/80 backdrop-blur-xl p-4 lg:p-6 rounded-[2.5rem] shadow-2xl border border-white/5 ring-1 ring-white/5 flex flex-col overflow-hidden'>
             <KanbanBoard />
           </section>
         </div>
+
+        <div className='h-10 lg:hidden' />
       </div>
     </main>
   );

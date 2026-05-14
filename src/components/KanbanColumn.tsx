@@ -17,7 +17,8 @@ export function KanbanColumn({
   const { setNodeRef } = useDroppable({ id: title });
 
   return (
-    <div className='flex flex-col w-[320px] shrink-0 h-full max-h-full bg-white/[0.02] rounded-[2rem] p-4 border border-white/[0.05]'>
+    <div className='flex flex-col h-full bg-[#1a1a1a]/40 backdrop-blur-md rounded-[2rem] border border-white/5 p-5'>
+      {' '}
       <div className='flex items-center justify-between mb-6 px-2'>
         <h2 className='text-sm font-bold text-slate-400 uppercase tracking-widest'>
           {title}
