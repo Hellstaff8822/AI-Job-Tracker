@@ -8,12 +8,12 @@ export default function JobTrackerPage() {
   const { isLoaded, isSignedIn } = useAuth();
 
   return (
-    <main className='min-h-screen lg:h-screen bg-[#0a0a0a] text-slate-200 p-0 md:p-8 font-sans overflow-y-auto lg:overflow-hidden'>
+    <main className='min-h-screen lg:h-screen bg-[#0a0a0a] text-slate-200 lg:p-8 font-sans selection:bg-blue-500/30 overflow-y-auto lg:overflow-hidden py-8 p-0'>
       <div className='fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none' />
       <div className='fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none' />
 
-      <div className='relative z-10 max-w-[1920px] mx-auto flex flex-col h-full px-4 md:px-0 pb-10 lg:pb-0'>
-        <header className='flex justify-between items-end mb-12'>
+      <div className='relative z-10 max-w-[1920px] mx-auto flex flex-col h-full'>
+        <header className='flex justify-between items-end mb-12 px-4 md:px-0'>
           <div>
             <h1 className='text-4xl font-black tracking-tighter bg-gradient-to-r from-white to-slate-500 bg-clip-text text-transparent leading-none'>
               JOB TRACKER
@@ -22,12 +22,13 @@ export default function JobTrackerPage() {
               AI Powered Assistant
             </p>
           </div>
+
           <div className='flex items-center gap-4 min-w-[120px] justify-end pb-1'>
             {!isLoaded ? (
               <div className='w-10 h-10 rounded-full bg-white/5 animate-pulse border border-white/10' />
             ) : !isSignedIn ? (
               <SignInButton mode='modal'>
-                <button className='px-6 cursor-pointer py-2.5 bg-white text-black text-xs font-black uppercase tracking-widest rounded-full hover:bg-blue-500 hover:text-white transition-all active:scale-95 shadow-xl shadow-blue-500/10'>
+                <button className='px-6 py-2.5 bg-white text-black text-xs font-black uppercase tracking-widest rounded-full hover:bg-blue-500 hover:text-white transition-all active:scale-95 shadow-xl shadow-blue-500/10'>
                   Увійти
                 </button>
               </SignInButton>
@@ -48,8 +49,8 @@ export default function JobTrackerPage() {
           </div>
         </header>
 
-        <div className='flex flex-col lg:flex-row gap-8 flex-1 overflow-hidden items-start'>
-          <section className='w-full lg:w-[320px] shrink-0'>
+        <div className='flex flex-col lg:flex-row gap-8 flex-1 items-start'>
+          <section className='w-full lg:w-[320px] shrink-0 px-4 md:px-0'>
             <JobInputForm />
           </section>
 
