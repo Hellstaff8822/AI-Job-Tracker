@@ -71,36 +71,41 @@ export function KanbanBoard() {
 
   return (
     <>
-    <DndContext
+      <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        modifiers={[snapCenterToCursor]} 
+        modifiers={[snapCenterToCursor]}
       >
-        <div className='flex flex-row gap-6 h-full items-start overflow-x-auto pb-10 custom-scrollbar pt-4 px-2'>
+        <div className='flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-smooth flex gap-4 p-4 lg:p-0 custom-scrollbar'>
           {COLUMNS.map((status) => (
-             <KanbanColumn
+            <div
               key={status}
-              title={status}
-              count={jobs.filter((j) => j.status === status).length}
+              className='snap-center shrink-0 w-[85vw] md:w-[350px]'
             >
-              {jobs
-                .filter((j) => j.status === status)
-                .map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    isDragging={job.id === activeId}
-                    onClick={setSelectedJob}
-                  />
-                ))}
-            </KanbanColumn>
+              <KanbanColumn
+                key={status}
+                title={status}
+                count={jobs.filter((j) => j.status === status).length}
+              >
+                {jobs
+                  .filter((j) => j.status === status)
+                  .map((job) => (
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                      isDragging={job.id === activeId}
+                      onClick={setSelectedJob}
+                    />
+                  ))}
+              </KanbanColumn>
+            </div>
           ))}
         </div>
         <DragOverlay adjustScale={false}>
           {activeJob ? (
             <div className='z-[1000] pointer-events-none'>
-               <JobCard job={activeJob} isOverlay={true} />
+              <JobCard job={activeJob} isOverlay={true} />
             </div>
           ) : null}
         </DragOverlay>
