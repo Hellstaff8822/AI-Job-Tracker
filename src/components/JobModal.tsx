@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { Job, JobStatus } from '@/types/job';
 import { COLUMNS } from './KanbanBoard';
+import { formatDate } from '@/lib/date-utils';
 import {
   deleteJobAction,
   addNoteAction,
@@ -13,6 +14,7 @@ import {
 } from '@/actions/job';
 import { useJobStore } from '@/store/useJobStore';
 import { toast } from 'sonner';
+import { translations } from '@/lib/i18n';
 import {
   X,
   Trash2,
@@ -36,15 +38,16 @@ import {
 
 import ReactMarkdown from 'react-markdown';
 
-const STATUS_CONFIG: Record<
-  string,
-  { icon: any; color: string; label: string }
-> = {
-  Backlog: { icon: FileText, color: 'text-slate-400', label: 'Створено' },
-  Applied: { icon: Send, color: 'text-blue-400', label: 'Відправлено' },
-  Interview: { icon: Users, color: 'text-yellow-400', label: 'Інтерв’ю' },
-  Offer: { icon: Award, color: 'text-green-400', label: 'Офер ✨' },
-  Rejected: { icon: XCircle, color: 'text-red-400', label: 'Відмова' },
+const STATUS_CONFIG_BASE = {
+  Backlog: { icon: FileText, color: 'text-slate-400', key: 'backlog' },
+  Contacted: { icon: Send, color: 'text-blue-400', key: 'contacted' },
+  Screening: { icon: Users, color: 'text-yellow-400', key: 'screening' },
+  'Tech Interview': {
+    icon: BrainCircuit,
+    color: 'text-purple-400',
+    key: 'technical',
+  },
+  'Offer/Reject': { icon: Award, color: 'text-green-400', key: 'outcome' },
 };
 
 interface JobModalProps {
@@ -63,16 +66,37 @@ export function JobModal({
     initialJob;
 
   const [isMounted, setIsMounted] = useState(false);
- const [activeTab, setActiveTab] = useState<
-   'details' | 'notes' | 'ai' | 'events'
- >('details');
+  const [activeTab, setActiveTab] = useState<
+    'details' | 'notes' | 'ai' | 'events'
+  >('details');
   const [newNoteText, setNewNoteText] = useState('');
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const { removeJob, addNote, deleteNote, updateAIInsights, updateJobStatus } = useJobStore();
+  const { removeJob, addNote, deleteNote, updateAIInsights, updateJobStatus, language } = useJobStore();
+  const t = translations[language].modal;
+  const n = translations[language].notifications;
+  const c = translations[language].common;
+
+  const workFormatMap: Record<string, string> = {
+    'Remote': c.remote,
+    'Office': c.office,
+    'Hybrid': c.hybrid,
+  };
+
+  const kanbanTranslations = translations[language].kanban;
+
+  const STATUS_CONFIG: any = Object.entries(STATUS_CONFIG_BASE).reduce((acc, [key, val]) => {
+    return {
+      ...acc,
+      [key]: {
+        ...val,
+        label: (kanbanTranslations as any)[val.key] || key
+      }
+    };
+  }, {});
 
   useEffect(() => {
     setIsMounted(true);
@@ -87,11 +111,11 @@ export function JobModal({
   const handleGenerateAI = async () => {
     setIsGeneratingAI(true);
     try {
-      const insights = await generateAIInsightsAction(job.id);
+      const insights = await generateAIInsightsAction(job.id, language);
       updateAIInsights(job.id, insights || '');
-      toast.success('ШІ підготував поради!');
+      toast.success(n.aiSuccess);
     } catch (err) {
-      toast.error('ШІ зараз відпочиває. Спробуй пізніше.');
+      toast.error(n.aiError);
     } finally {
       setIsGeneratingAI(false);
     }
@@ -104,9 +128,9 @@ export function JobModal({
       const note = await addNoteAction(job.id, newNoteText);
       addNote(job.id, note);
       setNewNoteText('');
-      toast.success('Нотатку додано');
+      toast.success(n.noteAdded);
     } catch (err) {
-      toast.error('Помилка при додаванні');
+      toast.error(n.noteAddError);
     } finally {
       setIsAddingNote(false);
     }
@@ -116,9 +140,9 @@ export function JobModal({
     try {
       await deleteNoteAction(noteId);
       deleteNote(job.id, noteId);
-      toast.success('Видалено');
+      toast.success(n.noteDeleted);
     } catch (err) {
-      toast.error('Помилка видалення');
+      toast.error(n.noteDeleteError);
     }
   };
 
@@ -127,27 +151,27 @@ export function JobModal({
     try {
       await deleteJobAction(job.id);
       removeJob(job.id);
-      toast.success('Вакансію видалено');
+      toast.success(n.jobDeleted);
       onClose();
     } catch (error) {
-      toast.error('Помилка при видаленні');
+      toast.error(n.jobDeleteError);
       setIsDeleting(false);
       setShowConfirm(false);
     }
   };
 
- const handleStatusChange = async (status: JobStatus) => {
-   const oldStatus = job.status;
-   if (status === oldStatus) return;
-   updateJobStatus(job.id, status);
-   try {
-     await updateJobStatusAction(job.id, status);
-     toast.success(`Статус успішно змінено на ${status}`);
-   } catch (error) {
-     updateJobStatus(job.id, oldStatus);
-     toast.error('Не вдалося оновити статус у базі даних');
-   }
- };
+  const handleStatusChange = async (status: JobStatus) => {
+    const oldStatus = job.status;
+    if (status === oldStatus) return;
+    updateJobStatus(job.id, status);
+    try {
+      await updateJobStatusAction(job.id, status);
+      toast.success(`${t.statusChanged} ${status}`);
+    } catch (error) {
+      updateJobStatus(job.id, oldStatus);
+      toast.error(n.statusUpdateError);
+    }
+  };
 
   return createPortal(
     <div className='fixed inset-0 z-[2000] flex items-center justify-center p-4'>
@@ -156,7 +180,6 @@ export function JobModal({
         onClick={onClose}
       />
       <div className='relative bg-slate-900 border border-white/5 w-[95vw] max-w-2xl rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]'>
-        {' '}
         <div className='relative h-auto min-h-24 bg-gradient-to-r from-blue-600/10 to-indigo-600/10 p-5 md:p-6 border-b border-white/5 shrink-0'>
           <div className='flex items-center gap-4 pr-10'>
             <div className='w-12 h-12 md:w-14 md:h-14 rounded-xl bg-slate-800 border border-white/10 overflow-hidden shadow-xl flex items-center justify-center shrink-0'>
@@ -196,15 +219,15 @@ export function JobModal({
         </div>
         <div className='flex bg-slate-900/50 border-b border-white/5 shrink-0 h-14'>
           {[
-            { id: 'details', label: 'Вакансія', icon: FileText, color: 'blue' },
+            { id: 'details', label: t.vacancy, icon: FileText, color: 'blue' },
             {
               id: 'notes',
-              label: 'Нотатки',
+              label: t.notes,
               icon: MessageCircle,
               color: 'blue',
             },
-            { id: 'ai', label: 'AI Помічник', icon: Sparkles, color: 'purple' },
-            { id: 'events', label: 'Events', icon: History },
+            { id: 'ai', label: t.ai, icon: Sparkles, color: 'purple' },
+            { id: 'events', label: t.timeline, icon: History },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -247,26 +270,26 @@ export function JobModal({
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                 <div className='bg-white/[0.03] p-4 rounded-2xl border border-white/5'>
                   <p className='text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1'>
-                    Бюджет
+                    {t.salary}
                   </p>
                   <div className='flex items-center gap-2 text-white font-bold leading-none'>
                     <DollarSign className='w-4 h-4 text-emerald-500' />
-                    {job.salary || 'Не вказано'}
+                    {job.salary === 'Competitive' ? c.competitive : (job.salary || c.notSpecified)}
                   </div>
                 </div>
                 <div className='bg-white/[0.03] p-4 rounded-2xl border border-white/5'>
                   <p className='text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1'>
-                    Локація
+                    {t.location}
                   </p>
                   <div className='flex items-center gap-2 text-white font-bold leading-none'>
                     <MapPin className='w-4 h-4 text-blue-500' />
-                    {job.workFormat}
+                    {job.workFormat ? (workFormatMap[job.workFormat] || job.workFormat) : c.notSpecified}
                   </div>
                 </div>
               </div>
               <div>
                 <h3 className='text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-3 flex items-center gap-2'>
-                  <Briefcase className='w-3 h-3' /> Стек технологій
+                  <Briefcase className='w-3 h-3' /> {t.tech}
                 </h3>
                 <div className='flex flex-wrap gap-2'>
                   {(job.technologies || []).map((tech) => (
@@ -281,7 +304,7 @@ export function JobModal({
               </div>
               <div>
                 <h3 className='text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-3'>
-                  Про вакансію
+                  {t.about}
                 </h3>
                 <div className='text-slate-400 text-sm leading-relaxed whitespace-pre-wrap bg-white/[0.01] p-5 rounded-2xl border border-white/5'>
                   {job.description}
@@ -296,7 +319,7 @@ export function JobModal({
                 <textarea
                   value={newNoteText}
                   onChange={(e) => setNewNoteText(e.target.value)}
-                  placeholder='Додати нову нотатку...'
+                  placeholder={t.addNote}
                   className='w-full bg-transparent border-none text-sm text-slate-300 focus:outline-none resize-none h-20 placeholder:text-slate-700'
                 />
                 <div className='flex justify-end mt-2'>
@@ -309,7 +332,7 @@ export function JobModal({
                       '...'
                     ) : (
                       <>
-                        <Plus className='w-3 h-3' /> ЗБЕРЕГТИ
+                        <Plus className='w-3 h-3' /> {t.saveNote}
                       </>
                     )}
                   </button>
@@ -320,9 +343,7 @@ export function JobModal({
                 {!job.notes || job.notes.length === 0 ? (
                   <div className='text-center py-12'>
                     <MessageCircle className='w-12 h-12 text-slate-800 mx-auto mb-4' />
-                    <p className='text-slate-500 text-sm italic'>
-                      Ще немає нотаток...
-                    </p>
+                    <p className='text-slate-500 text-sm italic'>{t.noNotes}</p>
                   </div>
                 ) : (
                   [...(job.notes || [])]
@@ -338,10 +359,7 @@ export function JobModal({
                       >
                         <div className='flex justify-between items-start mb-3'>
                           <p className='text-[10px] text-slate-500 font-bold uppercase tracking-wider'>
-                            {new Date(note.createdAt).toLocaleDateString(
-                              'uk-UA',
-                              { day: 'numeric', month: 'long' }
-                            )}
+                            {formatDate(note.createdAt, language)}
                           </p>
                           <button
                             onClick={() => handleDeleteNote(note.id)}
@@ -367,16 +385,15 @@ export function JobModal({
                   <div className='w-12 h-12 md:w-16 md:h-16 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4'>
                     <BrainCircuit className='w-6 h-6 md:w-8 md:h-8 text-purple-500' />
                   </div>
-                  <h3 className='text-white font-bold mb-2'>AI Підготовка</h3>
+                  <h3 className='text-white font-bold mb-2'>{t.aiTitle}</h3>
                   <p className='text-slate-500 text-xs mb-8 max-w-xs mx-auto px-4'>
-                    ШІ проаналізує вакансію і підготує персональний план:
-                    питання та Elevator Pitch.
+                    {t.aiDescription}
                   </p>
                   <button
                     onClick={handleGenerateAI}
                     className='px-6 py-3 md:px-8 md:py-4 bg-purple-600 hover:bg-purple-500 text-white text-[10px] md:text-xs font-black rounded-2xl transition-all shadow-xl shadow-purple-600/20 flex items-center gap-2 mx-auto cursor-pointer'
                   >
-                    <Wand2 className='w-4 h-4' /> ЗГЕНЕРУВАТИ
+                    <Wand2 className='w-4 h-4' /> {t.aiGenerate}
                   </button>
                 </div>
               ) : isGeneratingAI ? (
@@ -388,7 +405,7 @@ export function JobModal({
                     </div>
                   </div>
                   <h3 className='text-purple-400 font-bold animate-pulse'>
-                    ШІ готує персональні поради...
+                    {language === 'ua' ? 'ШІ готує поради...' : 'AI is preparing tips...'}
                   </h3>
                 </div>
               ) : (
@@ -396,7 +413,7 @@ export function JobModal({
                   <div className='flex items-center gap-2 mb-6'>
                     <Sparkles className='w-3.5 h-3.5 text-purple-500' />
                     <span className='text-[10px] font-black uppercase tracking-widest text-purple-500'>
-                      AI INSIGHTS
+                      {t.aiInsights}
                     </span>
                   </div>
                   <div className='text-slate-300 text-sm leading-relaxed prose prose-invert prose-p:mb-4 prose-headings:text-purple-400 prose-headings:mt-6 prose-headings:mb-2 prose-ul:list-disc prose-ul:pl-4'>
@@ -406,7 +423,7 @@ export function JobModal({
                     onClick={handleGenerateAI}
                     className='mt-8 text-[10px] text-slate-600 hover:text-purple-400 font-bold uppercase tracking-widest transition-colors cursor-pointer'
                   >
-                    Оновити аналіз
+                    {t.aiUpdate}
                   </button>
                 </div>
               )}
@@ -414,7 +431,6 @@ export function JobModal({
           )}
           {activeTab === 'events' && (
             <div className='p-6 space-y-8 relative max-w-lg mx-auto'>
-              {/* Вертикальна лінія */}
               <div className='absolute left-[2.25rem] top-10 bottom-10 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent' />
 
               {[...(job.history || [])]
@@ -431,7 +447,6 @@ export function JobModal({
                       key={event.id}
                       className='relative flex gap-6 items-start group animate-in fade-in slide-in-from-left-4 duration-500'
                     >
-                      {/* Точка на таймлайні */}
                       <div
                         className={`relative z-10 flex items-center justify-center w-9 h-9 rounded-xl bg-slate-900 border border-white/5 ${config.color} shadow-2xl group-hover:scale-110 transition-transform`}
                       >
@@ -444,18 +459,13 @@ export function JobModal({
                             {config.label}
                           </h4>
                           <time className='text-[9px] text-slate-500 font-bold uppercase'>
-                            {new Date(event.createdAt).toLocaleString('uk-UA', {
-                              day: 'numeric',
-                              month: 'short',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
+                            {formatDate(event.createdAt, language, true)}
                           </time>
                         </div>
                         <p className='text-xs text-slate-400 leading-relaxed'>
-                          Статус вакансії змінено на{' '}
+                          {t.statusChangeText}{' '}
                           <span className={`font-bold ${config.color}`}>
-                            {event.status}
+                            {config.label}
                           </span>
                         </p>
                       </div>
@@ -464,9 +474,7 @@ export function JobModal({
                 })}
               {(job.history || []).length === 0 && (
                 <div className='text-center py-12'>
-                  <p className='text-slate-500 text-xs italic'>
-                    Історія статусів ще порожня...
-                  </p>
+                  <p className='text-slate-500 text-xs italic'>{t.noHistory}</p>
                 </div>
               )}
             </div>
@@ -476,7 +484,7 @@ export function JobModal({
           <div className='flex flex-col gap-3 md:gap-6'>
             <div>
               <p className='text-slate-500 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mb-2'>
-                Змінити статус
+                {t.statusTitle}
               </p>
               <div className='flex flex-wrap gap-1.5 md:gap-2'>
                 {COLUMNS.map((status) => (
@@ -501,26 +509,26 @@ export function JobModal({
                   onClick={() => setShowConfirm(true)}
                   className='flex items-center gap-2 text-slate-500 hover:text-red-500 transition-colors text-xs md:text-sm font-bold group cursor-pointer'
                 >
-                  <Trash2 className='w-4 h-4' /> Видалити вакансію
+                  <Trash2 className='w-4 h-4' /> {t.delete}
                 </button>
               ) : (
                 <div className='flex items-center gap-4 bg-red-500/10 p-2 md:p-3 px-3 md:px-4 rounded-2xl border border-red-500/20 flex-1'>
                   <p className='text-red-200 text-[10px] md:text-xs font-bold flex-1'>
-                    Видалити назавжди?
+                    {t.confirmDelete}
                   </p>
                   <div className='flex gap-2'>
                     <button
                       onClick={() => setShowConfirm(false)}
                       className='text-slate-400 text-[10px] md:text-xs font-bold px-2 cursor-pointer'
                     >
-                      НІ
+                      {t.no}
                     </button>
                     <button
                       onClick={handleDeleteJob}
                       disabled={isDeleting}
                       className='px-3 py-1 md:px-4 md:py-1.5 bg-red-600 text-white text-[10px] md:text-xs font-black rounded-xl cursor-pointer'
                     >
-                      {isDeleting ? '...' : 'ТАК'}
+                      {isDeleting ? '...' : t.yes}
                     </button>
                   </div>
                 </div>

@@ -4,6 +4,9 @@ import { useDraggable } from '@dnd-kit/core';
 import { Job } from '@/types/job';
 import { MapPin, DollarSign, ExternalLink, Clock } from 'lucide-react';
 
+import { useJobStore } from '@/store/useJobStore';
+import { translations } from '@/lib/i18n';
+
 interface JobCardProps {
   job: Job;
   onClick?: (job: Job) => void;
@@ -11,7 +14,18 @@ interface JobCardProps {
   isOverlay?: boolean;
 }
 
+const workFormatMap: Record<string, string> = {
+  'Remote': 'remote',
+  'Office': 'office',
+  'Hybrid': 'hybrid',
+};
+
 export function JobCard({ job, onClick, isDragging, isOverlay }: JobCardProps) {
+  const { language } = useJobStore();
+  const c = translations[language].common;
+  
+  const localizedWorkFormat = job.workFormat ? (c as any)[workFormatMap[job.workFormat]] || job.workFormat : c.notSpecified;
+
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: job.id,
     disabled: !!isOverlay,
@@ -93,11 +107,11 @@ export function JobCard({ job, onClick, isDragging, isOverlay }: JobCardProps) {
         <div className='flex items-center gap-4 text-[11px] text-slate-300 font-medium'>
           <div className='flex items-center gap-1.5'>
             <DollarSign className='w-3.5 h-3.5 text-emerald-500' />
-            <span>{job.salary}</span>
+            <span>{job.salary === 'Competitive' ? c.competitive : (job.salary || c.notSpecified)}</span>
           </div>
           <div className='flex items-center gap-1.5'>
             <MapPin className='w-3.5 h-3.5 text-blue-500' />
-            <span>{job.workFormat}</span>
+            <span>{localizedWorkFormat}</span>
           </div>
         </div>
       </div>

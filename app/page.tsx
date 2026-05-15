@@ -4,9 +4,29 @@ import { JobInputForm } from '@/components/JobInputForm';
 import { KanbanBoard } from '@/components/KanbanBoard';
 import { SignInButton, UserButton, useAuth } from '@clerk/nextjs';
 import { DashboardStats } from '@/components/DashboardStats';
+import { LandingPage } from '@/components/LandingPage'; 
+
+
+import { useJobStore } from '@/store/useJobStore';
+import { translations } from '@/lib/i18n';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export default function JobTrackerPage() {
   const { isLoaded, isSignedIn } = useAuth();
+  const { language } = useJobStore();
+  const t = translations[language];
+
+  if (!isLoaded) {
+    return (
+      <div className='min-h-screen bg-[#050505] flex items-center justify-center'>
+        <div className='w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin' />
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return <LandingPage />;
+  }
 
   return (
     <main className='bg-[#0a0a0a] text-slate-200 font-sans selection:bg-blue-500/30 min-h-screen overflow-y-auto'>
@@ -17,20 +37,21 @@ export default function JobTrackerPage() {
         <header className='flex justify-between items-end mb-12'>
           <div>
             <h1 className='text-4xl font-black tracking-tighter bg-gradient-to-r from-white to-slate-500 bg-clip-text text-transparent leading-none'>
-              JOB TRACKER
+              {t.header.title}
             </h1>
             <p className='text-slate-500 text-xs font-bold uppercase tracking-[0.2em] mt-3 ml-1'>
-              AI Powered Assistant
+              {t.header.subtitle}
             </p>
           </div>
 
           <div className='flex items-center gap-4 min-w-[120px] justify-end pb-1'>
+            <LanguageSwitcher />
             {!isLoaded ? (
               <div className='w-10 h-10 rounded-full bg-white/5 animate-pulse border border-white/10' />
             ) : !isSignedIn ? (
               <SignInButton mode='modal'>
                 <button className='px-6 py-2.5 bg-white text-black text-xs font-black uppercase tracking-widest rounded-full hover:bg-blue-500 hover:text-white transition-all active:scale-95 shadow-xl shadow-blue-500/10'>
-                  Увійти
+                  {t.header.login}
                 </button>
               </SignInButton>
             ) : (

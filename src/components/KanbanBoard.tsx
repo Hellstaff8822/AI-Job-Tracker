@@ -21,6 +21,7 @@ import { snapCenterToCursor } from '@dnd-kit/modifiers';
 import { getJobsAction, updateJobStatusAction } from '@/actions/job';
 import { toast } from 'sonner';
 
+import { translations } from '@/lib/i18n';
 
 export const COLUMNS: JobStatus[] = [
   'Backlog',
@@ -30,10 +31,20 @@ export const COLUMNS: JobStatus[] = [
   'Offer/Reject',
 ];
 
+const COLUMN_KEYS: Record<string, string> = {
+  Backlog: 'backlog',
+  Contacted: 'contacted',
+  Screening: 'screening',
+  'Tech Interview': 'technical',
+  'Offer/Reject': 'outcome',
+};
+
 export function KanbanBoard() {
-  const { jobs, updateJobStatus, setJobs } = useJobStore();
+  const { jobs, updateJobStatus, setJobs, language } = useJobStore();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  
+  const t = translations[language].kanban;
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -76,7 +87,7 @@ export function KanbanBoard() {
       await updateJobStatusAction(jobId, newStatus);
     } catch (error) {
       updateJobStatus(jobId, oldStatus);
-      toast.error('Не вдалося зберегти статус у базі даних');
+      toast.error(translations[language].notifications.statusUpdateError);
     }
   };
 
@@ -98,7 +109,7 @@ export function KanbanBoard() {
             >
               <KanbanColumn
                 key={status}
-                title={status}
+                title={(t as any)[COLUMN_KEYS[status]] || status}
               >
                 {jobs
                   .filter((j) => j.status === status)

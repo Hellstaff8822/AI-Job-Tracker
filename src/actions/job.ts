@@ -12,7 +12,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-export async function parseAndSaveJob(url: string) {
+export async function parseAndSaveJob(url: string, language: string = 'ua') {
   const { userId } = await auth();
   if (!userId) throw new Error('Unauthorized');
 
@@ -20,7 +20,10 @@ export async function parseAndSaveJob(url: string) {
     where: { userId, url },
   });
   if (existingJob) {
-    throw new Error('Ви вже додали цю вакансію! 🧐');
+    const msg = language === 'ua' 
+      ? 'Ви вже додали цю вакансію! 🧐' 
+      : 'You already added this vacancy! 🧐';
+    throw new Error(msg);
   }
   try {
     const response = await fetch(url, {
@@ -31,7 +34,7 @@ export async function parseAndSaveJob(url: string) {
     });
 
     if (!response.ok)
-      throw new Error(`Сайт відповів помилкою: ${response.status}`);
+      throw new Error(`Site returned error: ${response.status}`);
     const html = await response.text();
     const $ = cheerio.load(html);
     let metaLogo =
@@ -50,34 +53,42 @@ export async function parseAndSaveJob(url: string) {
       messages: [
         {
           role: 'system',
-          content: `
-        Ти — професійний IT-рекрутер. Твоє завдання: проаналізувати текст сторінки та витягнути дані вакансії.
-        
-        КРИТЕРІЙ ВАКАНСІЇ: Текст має містити назву позиції та опис обов'язків або вимог.
-        
-        ЯКЩО ТЕКСТ Є ВАКАНСІЄЮ:
-        Поверни JSON з полями: isJob: true, company, position, salary, technologies (масив), workFormat, contactInfo, description, logoUrl.
-        
-        ЯКЩО ТЕКСТ НЕ Є ВАКАНСІЄЮ (наприклад, це головна сторінка сайту, стаття, документація NPM, профіль у соцмережі):
-        Поверни JSON: { "isJob": false }.
-        
-        Важливо: Повертай ТІЛЬКИ чистий JSON.
-      `,
+         content: `
+  You are a professional IT Recruiter. Your task is to analyze the page text and extract job vacancy data.
+  
+  JOB CRITERIA: The text must contain a job position title and a list of responsibilities or requirements.
+  
+  IF THE TEXT IS A JOB VACANCY:
+  Return JSON with fields: isJob: true, company, position, salary, technologies (array), workFormat, description, logoUrl.
+  
+  IF THE TEXT IS NOT A JOB VACANCY (e.g., home page, article, NPM documentation, social profile):
+  Return JSON: { "isJob": false }.
+  
+  IMPORTANT RULES:
+  1. Return ONLY pure JSON.
+  2. Provide 'company', 'position', 'salary', and 'workFormat' in ENGLISH.
+  3. Keep the 'description' in its ORIGINAL language.
+  4. Standardize 'workFormat' to one of: 'Remote', 'Office', 'Hybrid'.
+  5. If salary is not specified, set it to 'Competitive'.
+`,
         },
         {
           role: 'user',
-          content: `Текст сторінки: ${pageTitle}\n\n${cleanText}`,
+          content: `Page text: ${pageTitle}\n\n${cleanText}`,
         },
       ],
       response_format: { type: 'json_object' },
       max_tokens: 1500,
     });
     const content = responseAI.choices[0]?.message?.content;
-    if (!content) throw new Error('Порожня відповідь');
+    if (!content) throw new Error('Empty response');
     const parsedData = JSON.parse(content);
 
     if (parsedData.isJob === false) {
-      throw new Error('Вибачте, схоже, це посилання не містить опису вакансії');
+      const msg = language === 'ua'
+        ? 'Це посилання не містить опису вакансії'
+        : 'This link does not contain a job description';
+      throw new Error(msg);
     }
     const newJob = await prisma.job.create({
       data: {
@@ -85,7 +96,7 @@ export async function parseAndSaveJob(url: string) {
         company:
           parsedData.company ||
           pageTitle.split('|')[0].trim() ||
-          'Невідома компанія',
+          'Unknown company',
         position: parsedData.position || 'Frontend Developer',
         technologies: Array.isArray(parsedData.technologies)
           ? parsedData.technologies
@@ -104,14 +115,14 @@ export async function parseAndSaveJob(url: string) {
     });
     return newJob;
   } catch (error: any) {
-    throw new Error(`Помилка: ${error.message}`);
+    throw new Error(error.message);
   }
 }
 
 export async function getJobsAction() {
   const { userId } = await auth();
   noStore();
-  if (!userId) throw new Error('Ви не авторизовані!');
+  if (!userId) throw new Error('You are not authorized!');
 
   try {
     const jobs = await prisma.job.findMany({
@@ -122,7 +133,7 @@ export async function getJobsAction() {
     return jobs;
   } catch (error: any) {
     console.error('Error fetching jobs:', error);
-    throw new Error(`Помилка: ${error.message}`);
+    throw new Error(`Error fetching jobs: ${error.message}`);
   }
 }
 
@@ -136,7 +147,7 @@ export async function deleteJobAction(id: string) {
     });
     return { success: true };
   } catch (error: any) {
-    throw new Error(`Помилка видалення: ${error.message}`);
+    throw new Error(`Error deleting job: ${error.message}`);
   }
 }
 export async function addNoteAction(jobId: string, text: string) {
@@ -150,7 +161,7 @@ export async function addNoteAction(jobId: string, text: string) {
     return note;
   } catch (error: any) {
     console.error('❌ Add Note Error:', error.message);
-    throw new Error('Не вдалося додати нотатку');
+    throw new Error('Error adding note');
   }
 }
 export async function deleteNoteAction(noteId: string) {
@@ -161,29 +172,37 @@ export async function deleteNoteAction(noteId: string) {
     return { success: true };
   } catch (error: any) {
     console.error('❌ Delete Note Error:', error.message);
-    throw new Error('Не вдалося видалити нотатку');
+    throw new Error('Error deleting note');
   }
 }
 
-export async function generateAIInsightsAction(jobId: string) {
+export async function generateAIInsightsAction(jobId: string, language: string = 'ua') {
   const { userId } = await auth();
   if (!userId) throw new Error('Unauthorized');
   try {
     const job = await prisma.job.findUnique({
       where: { id: jobId, userId },
     });
-    if (!job || !job.description) throw new Error('Опис вакансії порожній');
+    if (!job || !job.description) throw new Error('Description is empty');
+    
+    const systemPrompt = language === 'ua'
+      ? 'Ти — професійний IT-рекрутер. Твоє завдання: проаналізувати вакансію і надати короткий план підготовки: 5 питань для інтерв’ю, Elevator Pitch та ключові поради. Відповідь давай українською мовою у форматі Markdown.'
+      : 'You are a professional IT recruiter. Your task is to analyze the vacancy and provide a short preparation plan: 5 interview questions, an Elevator Pitch, and key tips. Provide the response in English in Markdown format.';
+
+    const userPrompt = language === 'ua'
+      ? `Проаналізуй цю вакансію: Позиція: ${job.position}, Компанія: ${job.company}, Опис: ${job.description}`
+      : `Analyze this vacancy: Position: ${job.position}, Company: ${job.company}, Description: ${job.description}`;
+
     const completion = await openai.chat.completions.create({
       model: 'google/gemini-2.0-flash-001',
       messages: [
         {
           role: 'system',
-          content:
-            'Ти — професійний IT-рекрутер. Твоє завдання: проаналізувати вакансію і надати короткий план підготовки: 5 питань для інтерв’ю, Elevator Pitch та ключові поради. Відповідь давай українською мовою у форматі Markdown.',
+          content: systemPrompt,
         },
         {
           role: 'user',
-          content: `Проаналізуй цю вакансію: Позиція: ${job.position}, Компанія: ${job.company}, Опис: ${job.description}`,
+          content: userPrompt,
         },
       ],
     });
@@ -195,7 +214,8 @@ export async function generateAIInsightsAction(jobId: string) {
     return insights;
   } catch (error: any) {
     console.error('❌ AI Error:', error.message);
-    throw new Error('Не вдалося згенерувати поради');
+    const msg = language === 'ua' ? 'Помилка при генерації порад' : 'Error generating advice';
+    throw new Error(msg);
   }
 }
 
@@ -221,7 +241,7 @@ export async function updateJobStatusAction(jobId: string, status: string) {
     return { success: true, job: result };
   } catch (error: any) {
     console.error('❌ Update Status Error:', error.message);
-    throw new Error('Не вдалося оновити статус у базі даних');
+    throw new Error('Error updating status in database');
   }
 }
 

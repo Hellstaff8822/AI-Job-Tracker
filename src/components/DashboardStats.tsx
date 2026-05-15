@@ -2,20 +2,22 @@
 
 import { useJobStore } from '@/store/useJobStore';
 import { Briefcase, Users, Award, TrendingUp } from 'lucide-react';
+import { translations } from '@/lib/i18n';
 
 export function DashboardStats() {
-  const jobs = useJobStore((state) => state.jobs);
+ const { jobs, language } = useJobStore();
+ const t = translations[language].stats;
 
 const stats = [
   {
-    label: 'Всього',
+    label: t.total,
     value: jobs.length,
     icon: Briefcase,
     color: 'text-blue-400',
     bg: 'bg-blue-400/10',
   },
   {
-    label: 'Інтерв’ю',
+    label: t.interviews,
     value: jobs.filter(
       (j) => j.status === 'Tech Interview' || j.status === 'Screening'
     ).length,
@@ -24,14 +26,14 @@ const stats = [
     bg: 'bg-yellow-400/10',
   },
   {
-    label: 'Фінал (O/R)',
+    label: t.final,
     value: jobs.filter((j) => j.status === 'Offer/Reject').length,
     icon: Award,
     color: 'text-green-400',
     bg: 'bg-green-400/10',
   },
   {
-    label: 'Відгуки',
+    label: t.progress,
     value: jobs.filter(
       (j) => j.status !== 'Backlog' && j.status !== 'Offer/Reject'
     ).length,

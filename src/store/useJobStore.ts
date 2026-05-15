@@ -1,8 +1,13 @@
+// src/store/useJobStore.ts
+
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { Job, JobStatus, Note } from '@/types/job';
+import { Language } from '@/lib/i18n';
 
 interface JobState {
   jobs: Job[];
+  language: Language;
   addJob: (job: Job) => void;
   setJobs: (jobs: Job[]) => void;
   updateJobStatus: (id: string, status: JobStatus) => void;
@@ -10,64 +15,62 @@ interface JobState {
   addNote: (jobId: string, note: Note) => void;
   deleteNote: (jobId: string, noteId: string) => void;
   updateAIInsights: (id: string, insights: string) => void;
+  setLanguage: (lang: Language) => void;
 }
 
-export const useJobStore = create<JobState>((set) => ({
-  jobs: [],
 
-  addJob: (job) =>
-    set((state) => ({
-      jobs: [job, ...state.jobs],
-    })),
+export const useJobStore = create<JobState>()(
+  persist(
+    (set) => ({
+      jobs: [],
+      language: 'ua',
+      
+      setLanguage: (lang) => set({ language: lang }),
 
-  setJobs: (jobs) => set({ jobs }),
+      addJob: (job) =>
+        set((state) => ({
+          jobs: [job, ...state.jobs],
+        })),
 
- updateJobStatus: (id, status) =>
-  set((state) => ({
-    jobs: state.jobs.map((job) =>
-      job.id === id
-        ? {
-            ...job,
-            status,
+      setJobs: (jobs) => set({ jobs }),
 
-            history: [
-              {
-                id: Math.random().toString(),
-                jobId: id,
-                status,
-                createdAt: new Date().toISOString(),
-              },
-              ...(job.history || []),
-            ],
-          }
-        : job
-    ),
-  })),
+      updateJobStatus: (id, status) =>
+        set((state) => ({
+          jobs: state.jobs.map((job) =>
+            job.id === id ? { ...job, status } : job
+          ),
+        })),
 
-  removeJob: (id) =>
-    set((state) => ({
-      jobs: state.jobs.filter((job) => job.id !== id),
-    })),
+      removeJob: (id) =>
+        set((state) => ({
+          jobs: state.jobs.filter((job) => job.id !== id),
+        })),
 
-  addNote: (jobId, note) =>
-    set((state) => ({
-      jobs: state.jobs.map((job) =>
-        job.id === jobId ? { ...job, notes: [note, ...job.notes] } : job
-      ),
-    })),
-  deleteNote: (jobId, noteId) =>
-    set((state) => ({
-      jobs: state.jobs.map((job) =>
-        job.id === jobId
-          ? { ...job, notes: job.notes.filter((n) => n.id !== noteId) }
-          : job
-      ),
-    })),
+      addNote: (jobId, note) =>
+        set((state) => ({
+          jobs: state.jobs.map((job) =>
+            job.id === jobId
+              ? { ...job, notes: [note, ...(job.notes || [])] }
+              : job
+          ),
+        })),
 
-  updateAIInsights: (id, insights) =>
-    set((state) => ({
-      jobs: state.jobs.map((job) =>
-        job.id === id ? { ...job, aiInsights: insights } : job
-      ),
-    })),
-}));
+      deleteNote: (jobId, noteId) =>
+        set((state) => ({
+          jobs: state.jobs.map((job) =>
+            job.id === jobId
+              ? { ...job, notes: (job.notes || []).filter((n) => n.id !== noteId) }
+              : job
+          ),
+        })),
+
+      updateAIInsights: (id, insights) =>
+        set((state) => ({
+          jobs: state.jobs.map((job) =>
+            job.id === id ? { ...job, aiInsights: insights } : job
+          ),
+        })),
+    }),
+    { name: 'job-storage' } 
+  )
+);

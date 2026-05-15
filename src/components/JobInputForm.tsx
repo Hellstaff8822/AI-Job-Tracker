@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { parseAndSaveJob } from '@/actions/job';
 import { useJobStore } from '@/store/useJobStore';
 import { toast } from 'sonner';
+
+import { translations } from '@/lib/i18n';
 
 import { getUrlsValidationStatus } from '@/constants/domains';
 
@@ -19,6 +21,8 @@ export function JobInputForm() {
   const [jobUrl, setJobUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const addJob = useJobStore((state) => state.addJob);
+   const { language } = useJobStore();
+   const t = translations[language].form; 
 
   const validationStatus = getUrlsValidationStatus(jobUrl);
 
@@ -28,14 +32,14 @@ export function JobInputForm() {
 
     setIsLoading(true);
     try {
-      const newJob = await parseAndSaveJob(jobUrl);
+      const newJob = await parseAndSaveJob(jobUrl, language);
 
       addJob(newJob as any);
 
       setJobUrl('');
-      toast.success('Вакансію успішно додано! ✨');
+      toast.success(translations[language].notifications.jobAdded);
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(error.message || translations[language].notifications.jobAddError);
     } finally {
       setIsLoading(false);
     }
@@ -51,7 +55,7 @@ export function JobInputForm() {
           htmlFor='jobUrl'
           className='block text-sm font-semibold text-slate-300 mb-3'
         >
-          Посилання на вакансію
+          {t.label}
         </label>
         <input
           id='jobUrl'
@@ -59,7 +63,7 @@ export function JobInputForm() {
           value={jobUrl}
           onChange={(e) => setJobUrl(e.target.value)}
           disabled={isLoading}
-          placeholder='https://djinni.co/jobs/...'
+          placeholder={t.placeholder}
           className={`w-full p-4 bg-white/5 border rounded-xl transition-all text-slate-200 placeholder:text-slate-600 disabled:opacity-50 ${
             validationStatus === 'verified'
               ? 'border-green-500/30 focus:border-green-500/50'
@@ -75,18 +79,17 @@ export function JobInputForm() {
         <div className='mt-2 px-1 animate-in fade-in slide-in-from-top-1 duration-200'>
           {validationStatus === 'verified' && (
             <p className='text-[10px] text-green-500/80 font-bold uppercase tracking-wider flex items-center gap-1.5'>
-              <CheckCircle2 className='w-3.5 h-3.5' /> Офіційна підтримка
+              <CheckCircle2 className='w-3.5 h-3.5' /> {t.verified}
             </p>
           )}
           {validationStatus === 'experimental' && (
             <p className='text-[10px] text-yellow-500/80 font-bold uppercase tracking-wider flex items-center gap-1.5'>
-              <AlertCircle className='w-3.5 h-3.5' /> Експериментально (ШІ
-              спробує розібрати)
+              <AlertCircle className='w-3.5 h-3.5' /> {t.experimental}
             </p>
           )}
           {validationStatus === 'invalid' && jobUrl.length > 0 && (
             <p className='text-[10px] text-red-500/80 font-bold uppercase tracking-wider flex items-center gap-1.5'>
-              <XCircle className='w-3.5 h-3.5' /> Некоректний URL
+              <XCircle className='w-3.5 h-3.5' /> {t.invalid}
             </p>
           )}
         </div>
@@ -104,11 +107,11 @@ export function JobInputForm() {
         {isLoading ? (
           <div className='flex items-center justify-center gap-2'>
             <Loader2 className='w-4 h-4 animate-spin text-white/80' />
-            <span className='animate-pulse'>Аналізую...</span>
+            <span className='animate-pulse'>{t.parsing}</span>
           </div>
         ) : (
           <div className='flex items-center justify-center gap-2'>
-            <span>Add Job</span>
+            <span>{t.button}</span>
             <span className='animate-pulse'>✨</span>
           </div>
         )}
@@ -119,7 +122,7 @@ export function JobInputForm() {
       </button>
 
       <p className='text-xs text-slate-500 text-center mt-1'>
-        Підтримуються Djinni, DOU та LinkedIn
+        {t.footer}
       </p>
     </form>
   );
