@@ -49,14 +49,15 @@ interface StatusConfigItem {
 
 const STATUS_CONFIG_BASE: Record<JobStatus, StatusConfigItem> = {
   Backlog: { icon: FileText, color: 'text-slate-400', key: 'backlog' },
-  Contacted: { icon: Send, color: 'text-blue-400', key: 'contacted' },
+  Contacted: { icon: Send, color: 'text-purple-400', key: 'contacted' },
   Screening: { icon: Users, color: 'text-yellow-400', key: 'screening' },
   'Tech Interview': {
     icon: BrainCircuit,
-    color: 'text-purple-400',
+    color: 'text-indigo-400',
     key: 'technical',
   },
-  'Offer/Reject': { icon: Award, color: 'text-green-400', key: 'outcome' },
+  Offer: { icon: Award, color: 'text-green-400', key: 'offer' },
+  Reject: { icon: XCircle, color: 'text-rose-500', key: 'reject' },
 };
 
 interface JobModalProps {

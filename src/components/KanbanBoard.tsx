@@ -33,7 +33,8 @@ export const COLUMNS: JobStatus[] = [
   'Contacted',
   'Screening',
   'Tech Interview',
-  'Offer/Reject',
+  'Offer',
+  'Reject',
 ];
 
 type KanbanKey = keyof typeof translations.ua.kanban;
@@ -43,7 +44,8 @@ const COLUMN_KEYS: Record<JobStatus, KanbanKey> = {
   Contacted: 'contacted',
   Screening: 'screening',
   'Tech Interview': 'technical',
-  'Offer/Reject': 'outcome',
+  Offer: 'offer',
+  Reject: 'reject',
 };
 
 export function KanbanBoard() {

@@ -25,16 +25,17 @@ export const translations = {
     },
     stats: {
       total: 'Всього',
-      interviews: 'Інтерв’ю',
-      final: 'Фінал (O/R)',
-      progress: 'В процесі',
+      applied: 'Відгуки',
+      interviews: 'Співбесіди',
+      final: 'Оффери 🎉',
     },
     kanban: {
       backlog: 'Черга',
       contacted: 'Відгукнувся',
       screening: 'Скрінінг',
       technical: 'Технічне',
-      outcome: 'Оффер/Відмова',
+      offer: 'Оффер',
+      reject: 'Відмова',
     },
     form: {
       label: 'Посилання на вакансію',
@@ -117,16 +118,17 @@ export const translations = {
     },
     stats: {
       total: 'Total Jobs',
+      applied: 'Applied',
       interviews: 'Interviews',
-      final: 'Final (O/R)',
-      progress: 'In Progress',
+      final: 'Offers 🎉',
     },
     kanban: {
       backlog: 'Backlog',
       contacted: 'Contacted',
       screening: 'Screening',
       technical: 'Technical',
-      outcome: 'Offer/Reject',
+      offer: 'Offer',
+      reject: 'Reject',
     },
     form: {
       label: 'Vacancy URL',
@@ -185,5 +187,6 @@ export const translations = {
     },
   },
 } as const;
+
 
 export type Language = keyof typeof translations;

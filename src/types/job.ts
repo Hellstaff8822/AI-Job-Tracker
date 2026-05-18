@@ -3,7 +3,8 @@ export type JobStatus =
   | 'Contacted'
   | 'Screening'
   | 'Tech Interview'
-  | 'Offer/Reject';
+  | 'Offer'
+  | 'Reject';
 
 export interface Note {
   id: string;

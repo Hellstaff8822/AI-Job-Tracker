@@ -17,7 +17,16 @@ const stats = [
     bg: 'bg-blue-400/10',
   },
   {
+    label: t.applied,
+    // Рахуємо суто відгуки (Applied / Contacted)
+    value: jobs.filter((j) => j.status === 'Contacted').length,
+    icon: TrendingUp,
+    color: 'text-purple-400',
+    bg: 'bg-purple-400/10',
+  },
+  {
     label: t.interviews,
+    // Рахуємо суто активні етапи інтерв'ю (Screening або Tech Interview)
     value: jobs.filter(
       (j) => j.status === 'Tech Interview' || j.status === 'Screening'
     ).length,
@@ -27,19 +36,11 @@ const stats = [
   },
   {
     label: t.final,
-    value: jobs.filter((j) => j.status === 'Offer/Reject').length,
+    // Рахуємо суто чисті оффери (Offer)
+    value: jobs.filter((j) => j.status === 'Offer').length,
     icon: Award,
     color: 'text-green-400',
     bg: 'bg-green-400/10',
-  },
-  {
-    label: t.progress,
-    value: jobs.filter(
-      (j) => j.status !== 'Backlog' && j.status !== 'Offer/Reject'
-    ).length,
-    icon: TrendingUp,
-    color: 'text-purple-400',
-    bg: 'bg-purple-400/10',
   },
 ];
 

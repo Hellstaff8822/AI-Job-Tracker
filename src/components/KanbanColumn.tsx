@@ -6,10 +6,11 @@ import { JobStatus } from '@/types/job';
 
 const COLUMN_THEMES: Record<JobStatus, string> = {
   Backlog: 'text-blue-400',
-  Contacted: 'text-yellow-400',
-  Screening: 'text-purple-400',
+  Contacted: 'text-purple-400',
+  Screening: 'text-yellow-400',
   'Tech Interview': 'text-indigo-400',
-  'Offer/Reject': 'text-green-400',
+  Offer: 'text-green-400',
+  Reject: 'text-rose-500',
 };
 
 interface KanbanColumnProps {
