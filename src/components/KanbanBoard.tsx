@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react';
 import { KanbanColumn } from './KanbanColumn';
 import { JobCard } from './JobCard';
-import { JobModal } from './JobModal';
+import dynamic from 'next/dynamic';
+
+const JobModal = dynamic(
+  () => import('./JobModal').then((mod) => mod.JobModal),
+  { ssr: false }
+);
 import { useJobStore } from '@/store/useJobStore';
 import { JobStatus, Job } from '@/types/job';
 import {
@@ -31,7 +36,9 @@ export const COLUMNS: JobStatus[] = [
   'Offer/Reject',
 ];
 
-const COLUMN_KEYS: Record<string, string> = {
+type KanbanKey = keyof typeof translations.ua.kanban;
+
+const COLUMN_KEYS: Record<JobStatus, KanbanKey> = {
   Backlog: 'backlog',
   Contacted: 'contacted',
   Screening: 'screening',
@@ -64,7 +71,7 @@ export function KanbanBoard() {
   useEffect(() => {
     const loadJobs = async () => {
       const initialJobs = await getJobsAction();
-      setJobs(initialJobs as any);
+      setJobs(initialJobs as Job[]);
     };
     loadJobs();
   }, [setJobs]);
@@ -82,9 +89,13 @@ export function KanbanBoard() {
     const job = jobs.find((j) => j.id === jobId);
     if (!job || job.status === newStatus) return;
     const oldStatus = job.status; 
+    
     updateJobStatus(jobId, newStatus);
     try {
-      await updateJobStatusAction(jobId, newStatus);
+      const res = await updateJobStatusAction(jobId, newStatus);
+      if (res.success && res.historyRecord) {
+        updateJobStatus(jobId, newStatus, res.historyRecord);
+      }
     } catch (error) {
       updateJobStatus(jobId, oldStatus);
       toast.error(translations[language].notifications.statusUpdateError);
@@ -101,7 +112,7 @@ export function KanbanBoard() {
         onDragEnd={handleDragEnd}
         modifiers={[snapCenterToCursor]}
       >
-        <div className='flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-smooth flex gap-4 p-4 pb-10 lg:p-0 custom-scrollbar'>
+        <div className='flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-smooth flex gap-4 p-4 pb-10 lg:p-4 lg:pb-8 custom-scrollbar'>
           {COLUMNS.map((status) => (
             <div
               key={status}
@@ -109,7 +120,8 @@ export function KanbanBoard() {
             >
               <KanbanColumn
                 key={status}
-                title={(t as any)[COLUMN_KEYS[status]] || status}
+                id={status}
+                title={t[COLUMN_KEYS[status]] || status}
               >
                 {jobs
                   .filter((j) => j.status === status)

@@ -14,7 +14,9 @@ interface JobCardProps {
   isOverlay?: boolean;
 }
 
-const workFormatMap: Record<string, string> = {
+type CommonTranslationsKey = keyof typeof translations.ua.common;
+
+const workFormatMap: Record<string, CommonTranslationsKey> = {
   'Remote': 'remote',
   'Office': 'office',
   'Hybrid': 'hybrid',
@@ -24,7 +26,9 @@ export function JobCard({ job, onClick, isDragging, isOverlay }: JobCardProps) {
   const { language } = useJobStore();
   const c = translations[language].common;
   
-  const localizedWorkFormat = job.workFormat ? (c as any)[workFormatMap[job.workFormat]] || job.workFormat : c.notSpecified;
+  const localizedWorkFormat = job.workFormat && workFormatMap[job.workFormat]
+    ? c[workFormatMap[job.workFormat]]
+    : job.workFormat || c.notSpecified;
 
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: job.id,

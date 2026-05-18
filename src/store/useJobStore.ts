@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Job, JobStatus, Note } from '@/types/job';
+import { Job, JobStatus, Note, StatusHistory } from '@/types/job';
 import { Language } from '@/lib/i18n';
 
 interface JobState {
@@ -10,7 +10,7 @@ interface JobState {
   language: Language;
   addJob: (job: Job) => void;
   setJobs: (jobs: Job[]) => void;
-  updateJobStatus: (id: string, status: JobStatus) => void;
+  updateJobStatus: (id: string, status: JobStatus, historyRecord?: StatusHistory) => void;
   removeJob: (id: string) => void;
   addNote: (jobId: string, note: Note) => void;
   deleteNote: (jobId: string, noteId: string) => void;
@@ -34,10 +34,18 @@ export const useJobStore = create<JobState>()(
 
       setJobs: (jobs) => set({ jobs }),
 
-      updateJobStatus: (id, status) =>
+      updateJobStatus: (id, status, historyRecord) =>
         set((state) => ({
           jobs: state.jobs.map((job) =>
-            job.id === id ? { ...job, status } : job
+            job.id === id
+              ? {
+                  ...job,
+                  status,
+                  history: historyRecord
+                    ? [historyRecord, ...(job.history || []).filter((h) => h.id !== historyRecord.id)]
+                    : job.history,
+                }
+              : job
           ),
         })),
 

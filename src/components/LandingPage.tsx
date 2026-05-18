@@ -1,5 +1,3 @@
-// src/components/LandingPage.tsx
-
 'use client';
 
 import { useJobStore } from '@/store/useJobStore';

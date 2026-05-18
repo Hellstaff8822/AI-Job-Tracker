@@ -2,28 +2,31 @@
 
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
+import { JobStatus } from '@/types/job';
 
-const COLUMN_THEMES: Record<string, string> = {
-  BACKLOG: 'text-blue-400',
-  CONTACTED: 'text-yellow-400',
-  SCREENING: 'text-purple-400',
-  'TECH INTERVIEW': 'text-indigo-400',
-  OFFER: 'text-green-400',
-  REJECTED: 'text-red-400',
+const COLUMN_THEMES: Record<JobStatus, string> = {
+  Backlog: 'text-blue-400',
+  Contacted: 'text-yellow-400',
+  Screening: 'text-purple-400',
+  'Tech Interview': 'text-indigo-400',
+  'Offer/Reject': 'text-green-400',
 };
 
 interface KanbanColumnProps {
-  title: string;
+  id: JobStatus;
+  title: string; 
   children?: React.ReactNode;
 }
 
 export function KanbanColumn({
+  id,
   title,
   children,
 }: KanbanColumnProps) {
-  const { setNodeRef } = useDroppable({ id: title });
+  const { setNodeRef } = useDroppable({ id });
   const count = React.Children.count(children);
-  const colorClass = COLUMN_THEMES[title.toUpperCase()] || 'text-slate-400';
+  const colorClass = COLUMN_THEMES[id] || 'text-slate-400';
+  
   return (
     <div className='flex-1 min-w-[340px] flex flex-col h-full bg-[#161616]/40 backdrop-blur-2xl rounded-[2.5rem] border border-white/5 p-6 transition-all duration-500 hover:border-white/10 group/column'>
       <div className='flex items-center justify-between mb-8 px-1'>

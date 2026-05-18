@@ -16,6 +16,7 @@ import { useJobStore } from '@/store/useJobStore';
 import { toast } from 'sonner';
 import { translations } from '@/lib/i18n';
 import {
+  LucideIcon,
   X,
   Trash2,
   Building2,
@@ -38,7 +39,15 @@ import {
 
 import ReactMarkdown from 'react-markdown';
 
-const STATUS_CONFIG_BASE = {
+type KanbanKey = keyof typeof translations.ua.kanban;
+
+interface StatusConfigItem {
+  icon: LucideIcon;
+  color: string;
+  key: KanbanKey;
+}
+
+const STATUS_CONFIG_BASE: Record<JobStatus, StatusConfigItem> = {
   Backlog: { icon: FileText, color: 'text-slate-400', key: 'backlog' },
   Contacted: { icon: Send, color: 'text-blue-400', key: 'contacted' },
   Screening: { icon: Users, color: 'text-yellow-400', key: 'screening' },
@@ -65,7 +74,7 @@ export function JobModal({
     useJobStore((state) => state.jobs.find((j) => j.id === initialJob.id)) ||
     initialJob;
 
-  const [isMounted, setIsMounted] = useState(false);
+
   const [activeTab, setActiveTab] = useState<
     'details' | 'notes' | 'ai' | 'events'
   >('details');
@@ -88,25 +97,23 @@ export function JobModal({
 
   const kanbanTranslations = translations[language].kanban;
 
-  const STATUS_CONFIG: any = Object.entries(STATUS_CONFIG_BASE).reduce((acc, [key, val]) => {
+  const STATUS_CONFIG = Object.entries(STATUS_CONFIG_BASE).reduce((acc, [key, val]) => {
+    const statusKey = key as JobStatus;
     return {
       ...acc,
-      [key]: {
+      [statusKey]: {
         ...val,
-        label: (kanbanTranslations as any)[val.key] || key
+        label: kanbanTranslations[val.key] || key
       }
     };
-  }, {});
+  }, {} as Record<JobStatus, StatusConfigItem & { label: string }>);
 
   useEffect(() => {
-    setIsMounted(true);
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = 'unset';
     };
   }, []);
-
-  if (!isMounted) return null;
 
   const handleGenerateAI = async () => {
     setIsGeneratingAI(true);
@@ -165,7 +172,10 @@ export function JobModal({
     if (status === oldStatus) return;
     updateJobStatus(job.id, status);
     try {
-      await updateJobStatusAction(job.id, status);
+      const res = await updateJobStatusAction(job.id, status);
+      if (res.success && res.historyRecord) {
+        updateJobStatus(job.id, status, res.historyRecord);
+      }
       toast.success(`${t.statusChanged} ${status}`);
     } catch (error) {
       updateJobStatus(job.id, oldStatus);
@@ -231,7 +241,7 @@ export function JobModal({
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as 'details' | 'notes' | 'ai' | 'events')}
               className={`relative flex-1 flex flex-col items-center justify-center transition-all cursor-pointer group ${
                 activeTab === tab.id
                   ? tab.id === 'ai'
@@ -441,7 +451,7 @@ export function JobModal({
                 )
                 .map((event) => {
                   const config =
-                    STATUS_CONFIG[event.status] || STATUS_CONFIG['Backlog'];
+                    STATUS_CONFIG[event.status as JobStatus] || STATUS_CONFIG['Backlog'];
                   return (
                     <div
                       key={event.id}

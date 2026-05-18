@@ -2,6 +2,7 @@
 
 import { prisma } from '../../lib/prisma';
 import OpenAI from 'openai';
+import { Job, StatusHistory } from '../../generated/prisma';
 import * as cheerio from 'cheerio';
 
 import { auth } from '@clerk/nextjs/server';
@@ -37,14 +38,14 @@ export async function parseAndSaveJob(url: string, language: string = 'ua') {
       throw new Error(`Site returned error: ${response.status}`);
     const html = await response.text();
     const $ = cheerio.load(html);
-    let metaLogo =
+   const metaLogo =
       $('meta[property="og:image"]').attr('content') ||
       $('link[rel="icon"]').attr('href') ||
       $('img[alt*="logo" i]').attr('src');
     $('script, style, noscript, iframe').remove();
 
     const pageTitle = $('title').text();
-    let cleanText = `${pageTitle} ${$('body').text()}`
+    const cleanText = `${pageTitle} ${$('body').text()}`
       .replace(/\s+/g, ' ')
       .trim();
     const finalContent = cleanText.substring(0, 12000);
@@ -74,7 +75,7 @@ export async function parseAndSaveJob(url: string, language: string = 'ua') {
         },
         {
           role: 'user',
-          content: `Page text: ${pageTitle}\n\n${cleanText}`,
+          content: `Page text: ${pageTitle}\n\n${finalContent}`,
         },
       ],
       response_format: { type: 'json_object' },
@@ -108,14 +109,21 @@ export async function parseAndSaveJob(url: string, language: string = 'ua') {
         logoUrl: parsedData.logoUrl || metaLogo,
         url: url,
         status: 'Backlog',
+        
+        history: {
+          create: {
+            status: 'Backlog',
+          },
+        },
       },
       include: {
         notes: true,
+        history: true, 
       },
     });
     return newJob;
-  } catch (error: any) {
-    throw new Error(error.message);
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : String(error));
   }
 }
 
@@ -131,9 +139,9 @@ export async function getJobsAction() {
       orderBy: { createdAt: 'desc' },
     });
     return jobs;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching jobs:', error);
-    throw new Error(`Error fetching jobs: ${error.message}`);
+    throw new Error(`Error fetching jobs: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -146,8 +154,8 @@ export async function deleteJobAction(id: string) {
       where: { id, userId },
     });
     return { success: true };
-  } catch (error: any) {
-    throw new Error(`Error deleting job: ${error.message}`);
+  } catch (error: unknown) {
+    throw new Error(`Error deleting job: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 export async function addNoteAction(jobId: string, text: string) {
@@ -159,8 +167,8 @@ export async function addNoteAction(jobId: string, text: string) {
       },
     });
     return note;
-  } catch (error: any) {
-    console.error('❌ Add Note Error:', error.message);
+  } catch (error: unknown) {
+    console.error('❌ Add Note Error:', error instanceof Error ? error.message : String(error));
     throw new Error('Error adding note');
   }
 }
@@ -170,8 +178,8 @@ export async function deleteNoteAction(noteId: string) {
       where: { id: noteId },
     });
     return { success: true };
-  } catch (error: any) {
-    console.error('❌ Delete Note Error:', error.message);
+  } catch (error: unknown) {
+    console.error('❌ Delete Note Error:', error instanceof Error ? error.message : String(error));
     throw new Error('Error deleting note');
   }
 }
@@ -212,8 +220,8 @@ export async function generateAIInsightsAction(jobId: string, language: string =
       data: { aiInsights: insights },
     });
     return insights;
-  } catch (error: any) {
-    console.error('❌ AI Error:', error.message);
+  } catch (error: unknown) {
+    console.error('❌ AI Error:', error instanceof Error ? error.message : String(error));
     const msg = language === 'ua' ? 'Помилка при генерації порад' : 'Error generating advice';
     throw new Error(msg);
   }
@@ -221,7 +229,14 @@ export async function generateAIInsightsAction(jobId: string, language: string =
 
 
 
-export async function updateJobStatusAction(jobId: string, status: string) {
+export async function updateJobStatusAction(
+  jobId: string,
+  status: string
+): Promise<{
+  success: boolean;
+  job: Job;
+  historyRecord: StatusHistory;
+}> {
   const { userId } = await auth();
   if (!userId) throw new Error('Unauthorized');
   try {
@@ -230,17 +245,23 @@ export async function updateJobStatusAction(jobId: string, status: string) {
         where: { id: jobId, userId },
         data: { status },
       });
-      await tx.statusHistory.create({
+      // Зберігаємо створений запис історії змін статусу
+      const historyRecord = await tx.statusHistory.create({
         data: {
           jobId,
           status,
         },
       });
-      return updatedJob;
+      return { updatedJob, historyRecord };
     });
-    return { success: true, job: result };
-  } catch (error: any) {
-    console.error('❌ Update Status Error:', error.message);
+    // Повертаємо і оновлену вакансію, і новий запис історії для миттєвої синхронізації
+    return { 
+      success: true, 
+      job: result.updatedJob, 
+      historyRecord: result.historyRecord 
+    };
+  } catch (error: unknown) {
+    console.error('❌ Update Status Error:', error instanceof Error ? error.message : String(error));
     throw new Error('Error updating status in database');
   }
 }

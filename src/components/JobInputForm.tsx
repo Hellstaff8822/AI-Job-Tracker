@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { parseAndSaveJob } from '@/actions/job';
 import { useJobStore } from '@/store/useJobStore';
 import { toast } from 'sonner';
+import { Job } from '@/types/job';
 
 import { translations } from '@/lib/i18n';
 
@@ -11,7 +12,6 @@ import { getUrlsValidationStatus } from '@/constants/domains';
 
 import {
   Loader2,
-  Search,
   AlertCircle,
   CheckCircle2,
   XCircle,
@@ -34,12 +34,12 @@ export function JobInputForm() {
     try {
       const newJob = await parseAndSaveJob(jobUrl, language);
 
-      addJob(newJob as any);
+      addJob(newJob as Job);
 
       setJobUrl('');
       toast.success(translations[language].notifications.jobAdded);
-    } catch (error: any) {
-      toast.error(error.message || translations[language].notifications.jobAddError);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : translations[language].notifications.jobAddError);
     } finally {
       setIsLoading(false);
     }
