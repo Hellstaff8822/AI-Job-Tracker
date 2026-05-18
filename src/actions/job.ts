@@ -52,12 +52,13 @@ export async function parseAndSaveJob(
       });
     } catch (fetchError) {
       console.error('Fetch error:', fetchError);
+
       return {
         success: false,
         error:
           language === 'ua'
-            ? 'Не вдалося підключитися до сайту. Можливо, діє захист від парсингу. Спробуйте додати вручну.'
-            : 'Could not connect to the site. Parsing protection might be active. Try adding manually.',
+            ? 'Не вдалося підключитися до сайту. Можливо, діє захист від парсингу.'
+            : 'Could not connect to the site. Parsing protection might be active.',
       };
     }
 
@@ -66,8 +67,8 @@ export async function parseAndSaveJob(
         success: false,
         error:
           language === 'ua'
-            ? 'Не вдалося зчитати вакансію. Сайт заблокував доступ (помилка ' + response.status + '). Спробуйте додати вручну.'
-            : 'Could not read the vacancy. Access blocked by the site (error ' + response.status + '). Try adding manually.',
+            ? 'Не вдалося зчитати вакансію. Сайт заблокував доступ'
+            : 'Could not read the vacancy. Access blocked by the site.',
       };
     }
 
