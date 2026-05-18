@@ -32,14 +32,24 @@ export function JobInputForm() {
 
     setIsLoading(true);
     try {
-      const newJob = await parseAndSaveJob(jobUrl, language);
+      const res = await parseAndSaveJob(jobUrl, language);
 
-      addJob(newJob as Job);
+      if (!res.success) {
+        toast.error(res.error);
+        return;
+      }
+
+    addJob(res.job as unknown as Job);
 
       setJobUrl('');
       toast.success(translations[language].notifications.jobAdded);
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : translations[language].notifications.jobAddError);
+      console.error('Job submission error:', error);
+      toast.error(
+        language === 'ua'
+          ? 'Помилка зв’язку із сервером. Спробуйте пізніше.'
+          : 'Error connecting to the server. Please try again later.'
+      );
     } finally {
       setIsLoading(false);
     }

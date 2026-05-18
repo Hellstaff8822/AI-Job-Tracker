@@ -13,32 +13,67 @@ const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-export async function parseAndSaveJob(url: string, language: string = 'ua') {
+export async function parseAndSaveJob(
+  url: string,
+  language: string = 'ua'
+): Promise<
+  | { success: true; job: Job }
+  | { success: false; error: string }
+> {
   const { userId } = await auth();
-  if (!userId) throw new Error('Unauthorized');
-
-  const existingJob = await prisma.job.findFirst({
-    where: { userId, url },
-  });
-  if (existingJob) {
-    const msg = language === 'ua' 
-      ? 'Ви вже додали цю вакансію! 🧐' 
-      : 'You already added this vacancy! 🧐';
-    throw new Error(msg);
+  if (!userId) {
+    return {
+      success: false,
+      error: language === 'ua' ? 'Неавторизовано' : 'Unauthorized',
+    };
   }
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      },
-    });
 
-    if (!response.ok)
-      throw new Error(`Site returned error: ${response.status}`);
+  try {
+    const existingJob = await prisma.job.findFirst({
+      where: { userId, url },
+    });
+    if (existingJob) {
+      return {
+        success: false,
+        error:
+          language === 'ua'
+            ? 'Ви вже додали цю вакансію! 🧐'
+            : 'You already added this vacancy! 🧐',
+      };
+    }
+
+    let response;
+    try {
+      response = await fetch(url, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+      });
+    } catch (fetchError) {
+      console.error('Fetch error:', fetchError);
+      return {
+        success: false,
+        error:
+          language === 'ua'
+            ? 'Не вдалося підключитися до сайту. Можливо, діє захист від парсингу. Спробуйте додати вручну.'
+            : 'Could not connect to the site. Parsing protection might be active. Try adding manually.',
+      };
+    }
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error:
+          language === 'ua'
+            ? 'Не вдалося зчитати вакансію. Сайт заблокував доступ (помилка ' + response.status + '). Спробуйте додати вручну.'
+            : 'Could not read the vacancy. Access blocked by the site (error ' + response.status + '). Try adding manually.',
+      };
+    }
+
     const html = await response.text();
     const $ = cheerio.load(html);
-   const metaLogo =
+    const metaLogo =
       $('meta[property="og:image"]').attr('content') ||
       $('link[rel="icon"]').attr('href') ||
       $('img[alt*="logo" i]').attr('src');
@@ -48,49 +83,77 @@ export async function parseAndSaveJob(url: string, language: string = 'ua') {
     const cleanText = `${pageTitle} ${$('body').text()}`
       .replace(/\s+/g, ' ')
       .trim();
+
     const finalContent = cleanText.substring(0, 12000);
-    const responseAI = await openai.chat.completions.create({
-      model: 'google/gemini-2.0-flash-001',
-      messages: [
-        {
-          role: 'system',
-         content: `
-  You are a professional IT Recruiter. Your task is to analyze the page text and extract job vacancy data.
-  
-  JOB CRITERIA: The text must contain a job position title and a list of responsibilities or requirements.
-  
-  IF THE TEXT IS A JOB VACANCY:
-  Return JSON with fields: isJob: true, company, position, salary, technologies (array), workFormat, description, logoUrl.
-  
-  IF THE TEXT IS NOT A JOB VACANCY (e.g., home page, article, NPM documentation, social profile):
-  Return JSON: { "isJob": false }.
-  
-  IMPORTANT RULES:
-  1. Return ONLY pure JSON.
-  2. Provide 'company', 'position', 'salary', and 'workFormat' in ENGLISH.
-  3. Keep the 'description' in its ORIGINAL language.
-  4. Standardize 'workFormat' to one of: 'Remote', 'Office', 'Hybrid'.
-  5. If salary is not specified, set it to 'Competitive'.
-`,
-        },
-        {
-          role: 'user',
-          content: `Page text: ${pageTitle}\n\n${finalContent}`,
-        },
-      ],
-      response_format: { type: 'json_object' },
-      max_tokens: 1500,
-    });
+    
+    let responseAI;
+    try {
+      responseAI = await openai.chat.completions.create({
+        model: 'google/gemini-2.0-flash-001',
+        messages: [
+          {
+            role: 'system',
+            content: `
+    You are a professional IT Recruiter. Your task is to analyze the page text and extract job vacancy data.
+    
+    JOB CRITERIA: The text must contain a job position title and a list of responsibilities or requirements.
+    
+    IF THE TEXT IS A JOB VACANCY:
+    Return JSON with fields: isJob: true, company, position, salary, technologies (array), workFormat, description, logoUrl.
+    
+    IF THE TEXT IS NOT A JOB VACANCY (e.g., home page, article, NPM documentation, social profile):
+    Return JSON: { "isJob": false }.
+    
+    IMPORTANT RULES:
+    1. Return ONLY pure JSON.
+    2. Provide 'company', 'position', 'salary', and 'workFormat' in ENGLISH.
+    3. Keep the 'description' in its ORIGINAL language.
+    4. Standardize 'workFormat' to one of: 'Remote', 'Office', 'Hybrid'.
+    5. If salary is not specified, set it to 'Competitive'.
+  `,
+          },
+          {
+            role: 'user',
+            content: `Page text: ${pageTitle}\n\n${finalContent}`,
+          },
+        ],
+        response_format: { type: 'json_object' },
+        max_tokens: 1500,
+      });
+    } catch (aiError) {
+      console.error('AI Error:', aiError);
+      return {
+        success: false,
+        error:
+          language === 'ua'
+            ? 'Помилка ШІ при аналізі вакансії. Спробуйте пізніше.'
+            : 'AI error analyzing the vacancy. Please try again later.',
+      };
+    }
+
     const content = responseAI.choices[0]?.message?.content;
-    if (!content) throw new Error('Empty response');
+    if (!content) {
+      return {
+        success: false,
+        error:
+          language === 'ua'
+            ? 'Не вдалося отримати відповідь від ШІ.'
+            : 'Failed to get a response from the AI.',
+      };
+    }
+
     const parsedData = JSON.parse(content);
 
     if (parsedData.isJob === false) {
-      const msg = language === 'ua'
-        ? 'Це посилання не містить опису вакансії'
-        : 'This link does not contain a job description';
-      throw new Error(msg);
+      return {
+        success: false,
+        error:
+          language === 'ua'
+            ? 'Це посилання не містить опису вакансії.'
+            : 'This link does not contain a job description.',
+      };
     }
+
     const newJob = await prisma.job.create({
       data: {
         userId,
@@ -121,9 +184,17 @@ export async function parseAndSaveJob(url: string, language: string = 'ua') {
         history: true, 
       },
     });
-    return newJob;
+
+    return { success: true, job: newJob };
   } catch (error: unknown) {
-    throw new Error(error instanceof Error ? error.message : String(error));
+    console.error('❌ Parse and save job error:', error);
+    return {
+      success: false,
+      error:
+        language === 'ua'
+          ? 'Сталася неочікувана помилка при обробці запиту.'
+          : 'An unexpected error occurred while processing the request.',
+    };
   }
 }
 
