@@ -90,7 +90,7 @@ export async function parseAndSaveJob(
     let responseAI;
     try {
       responseAI = await openai.chat.completions.create({
-        model: 'google/gemini-2.0-flash-001',
+        model: 'google/gemini-2.5-flash-lite',
         messages: [
           {
             role: 'system',
@@ -274,7 +274,7 @@ export async function generateAIInsightsAction(jobId: string, language: string =
       : `Analyze this vacancy: Position: ${job.position}, Company: ${job.company}, Description: ${job.description}`;
 
     const completion = await openai.chat.completions.create({
-      model: 'google/gemini-2.0-flash-001',
+      model: 'google/gemini-2.5-flash-lite',
       messages: [
         {
           role: 'system',

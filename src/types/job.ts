@@ -33,5 +33,5 @@ export interface StatusHistory {
   id: string;
   jobId: string;
   status: string;
-  createdAt: Date | string;
+  createdAt: Date | string
 }

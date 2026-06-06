@@ -73,7 +73,7 @@ export function KanbanBoard() {
   useEffect(() => {
     const loadJobs = async () => {
       const initialJobs = await getJobsAction();
-      setJobs(initialJobs as Job[]);
+      setJobs(initialJobs as Job[])
     };
     loadJobs();
   }, [setJobs]);
